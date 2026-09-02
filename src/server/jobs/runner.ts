@@ -2,7 +2,7 @@ import type { Job } from "@prisma/client";
 // The runner is trusted cross-org INFRASTRUCTURE, not feature code, so it may import
 // basePrisma directly (docs/architecture.md §5 rule 2 exempts infrastructure). It must
 // never leak org data across tenants — the claim query operates on all orgs by design.
-import { basePrisma } from "@/server/db/client";
+import { basePrisma, orgDb } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 import { handlers } from "./handlers";
 
@@ -44,9 +44,13 @@ async function reclaimStaleJobs(): Promise<number> {
 }
 
 async function runJob(job: Job): Promise<void> {
+  // Split the raw payload from the metadata, and hand the handler an already-scoped
+  // client so it can never reach an unscoped one (docs/architecture.md §8).
+  const { payload, ...meta } = job;
+  const db = orgDb(job.orgId);
   try {
-    await handlers[job.type](job);
-    await basePrisma.job.update({
+    await handlers[job.type](db, payload, meta);
+    await db.job.update({
       where: { id: job.id },
       data: { status: "DONE", lockedAt: null, lastError: null },
     });
@@ -55,7 +59,7 @@ async function runJob(job: Job): Promise<void> {
     const attempts = job.attempts + 1;
     const failed = attempts >= job.maxRetries;
     const backoffMs = BASE_BACKOFF_MS * 2 ** (attempts - 1);
-    await basePrisma.job.update({
+    await db.job.update({
       where: { id: job.id },
       data: {
         attempts,

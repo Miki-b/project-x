@@ -29,9 +29,10 @@ if (process.env.NODE_ENV !== "production") {
  *   - create / createMany     -> into `data`
  *   - upsert                  -> into both `where` and `create`
  *
- * Note on `findUnique`/`findUniqueOrThrow`: Prisma's unique `where` input accepts
- * only unique fields, so prefer `findFirst` for tenant-scoped single-row reads. The
- * scope is still injected here so a stray `findUnique` cannot silently cross tenants.
+ * `findUnique`/`findUniqueOrThrow`/`update`/`delete` accept the extra `orgId` filter
+ * alongside the unique field (Prisma's extendedWhereUnique, GA since Prisma 5): a
+ * cross-org lookup by id returns null / P2025. Verified permanently by
+ * src/server/db/orgScope.integration.ts.
  */
 function applyOrgScope(operation: string, args: Record<string, unknown>, orgId: string): void {
   switch (operation) {

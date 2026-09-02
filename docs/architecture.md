@@ -73,7 +73,8 @@ Employees (Telegram)          Managers (Web dashboard)
       handlers/            one file per JobType
       enqueue.ts
     /ai
-      index.ts             the only file that imports the AI SDK
+      index.ts             public surface — re-exports the typed functions
+      client.ts            constructs the Anthropic client (SDK import lives here)
       parseTasks.ts
       transcribe.ts
       summarise.ts
@@ -91,10 +92,12 @@ Employees (Telegram)          Managers (Web dashboard)
       am.json
   /types
 /worker
-  index.ts                 bot + job runner process entry
+  index.ts                 job runner process entry (poll loop only)
 ```
 
-**Dependency direction:** `app` and `telegram` may import from `server/services`. `server/services` must never import from `app` or `telegram`. Nothing outside `server/ai` imports the AI SDK. Nothing outside `server/db` constructs a Prisma client.
+The **worker** process runs the job runner poll loop only. The Telegram bot runs as a **webhook in production** (the `/api/telegram` route inside the `web` process) and via **long polling in development** (`npm run bot:dev`); it is not part of the worker.
+
+**Dependency direction:** `app` and `telegram` may import from `server/services`. `server/services` must never import from `app` or `telegram`. Nothing outside `server/ai/**` imports the AI SDK. Nothing outside `server/db` constructs a Prisma client.
 
 ## 4. Data model
 
@@ -211,7 +214,7 @@ Append-only history. Never updated, never deleted.
 | id | cuid PK | |
 | orgId | FK → organizations | Cascade |
 | title / description | String | |
-| assigneeId | FK → users | Cascade |
+| assigneeId | FK → users | `Restrict` — matches `tasks.assigneeId`; a user with templates cannot be orphaned |
 | rule | String | RRULE-like subset: `FREQ=DAILY`, `FREQ=WEEKLY;BYDAY=MO,WE`, `FREQ=MONTHLY;BYMONTHDAY=5` |
 | timeOfDay | String | `HH:mm` in org timezone, default `09:00` |
 | active | Boolean | Default true |
@@ -255,7 +258,7 @@ Organization 1─* Job
 User 1─* Task            (as assignee, Restrict)
 User 1─* Task            (as creator, Restrict)
 User 1─* TaskUpdate      (as actor, SetNull)
-User 1─* RecurringTemplate (as assignee, Cascade)
+User 1─* RecurringTemplate (as assignee, Restrict)
 User 1─1 Invite          (as the user who consumed it, SetNull)
 
 Task 1─* TaskUpdate      (Cascade)
@@ -350,6 +353,14 @@ every 30s:
 
 `FOR UPDATE SKIP LOCKED` is what makes it safe to run more than one worker later without changing anything.
 
+**Handler signature.** Raw SQL is confined to the claim/reclaim queries. For each claimed job the runner builds `orgDb(job.orgId)` and dispatches to a handler typed as:
+
+```ts
+type JobHandler<T> = (db: OrgDb, payload: T, job: JobMeta) => Promise<void>;
+```
+
+Handlers receive an already org-scoped client and never construct or reach an unscoped one. `JobMeta` is the job row minus its `payload`; the payload is passed separately and validated before use.
+
 ### Job types
 
 | Type | Enqueued when | Does |
@@ -392,7 +403,7 @@ A task arrives as a message with inline keyboard buttons: **Started**, **Done**,
 
 ## 10. AI module
 
-`src/server/ai` is the only place that imports the AI SDK. Everything else calls typed functions.
+Only `src/server/ai/**` imports the AI SDK (the client is constructed in `server/ai/client.ts`; `index.ts` is the public surface). Everything else calls typed functions.
 
 ```ts
 parseTasksFromText(input: string, ctx: Ctx): Promise<TaskDraft[]>

@@ -237,7 +237,8 @@ model RecurringTemplate {
   updatedAt       DateTime  @updatedAt
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  assignee     User         @relation("TemplateAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  // Restrict, matching tasks.assignee — a user with templates cannot be orphaned by a delete (§4.9).
+  assignee     User         @relation("TemplateAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
 
   tasks Task[]
 

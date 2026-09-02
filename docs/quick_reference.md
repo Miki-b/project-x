@@ -95,7 +95,7 @@ PENDING → IN_PROGRESS → DONE
 app/ + telegram/  →  server/services/  →  server/db/, server/ai/, server/jobs/
 ```
 
-Services never import from `app` or `telegram`. Only `server/ai` imports the AI SDK. Only `server/db` constructs a Prisma client. Services take `Ctx = { orgId, actorId, role, locale }` and know nothing about HTTP or grammY.
+Services never import from `app` or `telegram`. Only `server/ai/**` imports the AI SDK (client in `server/ai/client.ts`). Only `server/db` constructs a Prisma client. Services take `Ctx = { orgId, actorId, role, locale }` and know nothing about HTTP or grammY.
 
 ## Job runner
 
