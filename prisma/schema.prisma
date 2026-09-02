@@ -1,0 +1,272 @@
+// Prisma schema — authoritative model defined in docs/architecture.md §4.
+//
+// Rules encoded here (docs/architecture.md §5):
+//   - Every application table except `organizations` carries `orgId`.
+//   - Timestamps are stored in UTC; conversion to Africa/Addis_Ababa is a display concern.
+//   - Dates are stored Gregorian; the Ethiopian calendar is a rendering concern.
+//   - Enums live here, not as free strings — adding a value is a migration.
+//
+// Migration policy (docs/architecture.md §6): never edit an applied migration,
+// never `db push` once the first migration exists.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection for the app at runtime.
+  url       = env("DATABASE_URL")
+  // Unpooled connection for Prisma Migrate — Prisma cannot migrate through Neon's pooler.
+  directUrl = env("DIRECT_URL")
+  // Uncomment if `migrate dev` cannot create a shadow database on Neon (see .env.example).
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (docs/architecture.md §4.1)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  MANAGER
+  MEMBER
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  BLOCKED
+  CANCELLED
+}
+
+enum TaskSource {
+  MANUAL
+  AI_TEXT
+  AI_VOICE
+  RECURRING
+}
+
+enum UpdateType {
+  ASSIGNMENT
+  STATUS_CHANGE
+  COMMENT
+  PROOF
+  REMINDER_SENT
+}
+
+enum JobType {
+  TASK_REMINDER
+  END_OF_DAY_NUDGE
+  DAILY_SUMMARY
+  RECURRING_GENERATE
+  AI_PARSE
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Organization — the tenant root. Everything cascades from here. (§4.2)
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  timezone  String   @default("Africa/Addis_Ababa")
+  locale    String   @default("en")
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  invites            Invite[]
+  tasks              Task[]
+  taskUpdates        TaskUpdate[]
+  recurringTemplates RecurringTemplate[]
+  jobs               Job[]
+
+  @@map("organizations")
+}
+
+// ---------------------------------------------------------------------------
+// User — employees and managers. Employees never have a password. (§4.3)
+// Users are disabled, never deleted (§5 rule 7).
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String     @id @default(cuid())
+  orgId            String
+  name             String
+  phone            String?
+  telegramUserId   BigInt?
+  telegramChatId   BigInt?
+  telegramLinkedAt DateTime?
+  role             Role       @default(MEMBER)
+  status           UserStatus @default(INVITED)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  assignedTasks      Task[]              @relation("TaskAssignee")
+  createdTasks       Task[]              @relation("TaskCreator")
+  taskUpdates        TaskUpdate[]        @relation("TaskUpdateActor")
+  recurringTemplates RecurringTemplate[] @relation("TemplateAssignee")
+  consumedInvite     Invite?             @relation("InviteConsumer")
+
+  // Per-org uniqueness, not global: one person may later serve two companies (§4.3).
+  @@unique([orgId, telegramUserId])
+  @@unique([orgId, phone])
+  @@index([orgId, status])
+  @@index([telegramUserId])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Invite — join links. One org-wide reusable link is the v1 primary path. (§4.4)
+// ---------------------------------------------------------------------------
+
+model Invite {
+  id        String    @id @default(cuid())
+  orgId     String
+  token     String    @unique
+  name      String?
+  phone     String?
+  role      Role      @default(MEMBER)
+  expiresAt DateTime
+  usedById  String?   @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  usedBy       User?        @relation("InviteConsumer", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@map("invites")
+}
+
+// ---------------------------------------------------------------------------
+// Task — the core object. (§4.5)
+// assignee/creator are Restrict so history can never be orphaned by a user delete.
+// ---------------------------------------------------------------------------
+
+model Task {
+  id          String     @id @default(cuid())
+  orgId       String
+  title       String
+  description String?
+  assigneeId  String
+  createdById String
+  dueAt       DateTime? // UTC
+  status      TaskStatus @default(PENDING)
+  source      TaskSource @default(MANUAL)
+  templateId  String?
+  completedAt DateTime? // set only on transition to DONE
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  organization Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee     User               @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  createdBy    User               @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  template     RecurringTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  updates TaskUpdate[]
+
+  @@index([orgId, assigneeId, status]) // employee task list
+  @@index([orgId, status, dueAt]) // manager board
+  @@index([orgId, dueAt]) // reminder sweeps
+  @@index([templateId, createdAt]) // recurrence dedupe
+  @@map("tasks")
+}
+
+// ---------------------------------------------------------------------------
+// TaskUpdate — append-only history. Never updated, never deleted. (§4.6, §5 rule 4)
+// ---------------------------------------------------------------------------
+
+model TaskUpdate {
+  id             String      @id @default(cuid())
+  orgId          String
+  taskId         String
+  actorId        String? // null means system-generated
+  type           UpdateType
+  fromStatus     TaskStatus? // set for STATUS_CHANGE
+  toStatus       TaskStatus? // set for STATUS_CHANGE
+  note           String? // comment or blocker reason
+  telegramFileId String? // Telegram-hosted media reference; we do not store media (§4.6)
+  mediaType      String? // "photo" | "voice" | "document"
+  createdAt      DateTime    @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  task         Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor        User?        @relation("TaskUpdateActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+  @@index([orgId, createdAt])
+  @@map("task_updates")
+}
+
+// ---------------------------------------------------------------------------
+// RecurringTemplate — repeat rules. (§4.7)
+// lastGeneratedOn is the idempotency key for recurrence generation.
+// ---------------------------------------------------------------------------
+
+model RecurringTemplate {
+  id              String    @id @default(cuid())
+  orgId           String
+  title           String
+  description     String
+  assigneeId      String
+  rule            String // RRULE-like subset: FREQ=DAILY | FREQ=WEEKLY;BYDAY=MO,WE | FREQ=MONTHLY;BYMONTHDAY=5
+  timeOfDay       String    @default("09:00") // HH:mm in org timezone
+  active          Boolean   @default(true)
+  lastGeneratedOn DateTime? @db.Date // Gregorian date guard against duplicate generation
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee     User         @relation("TemplateAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  @@index([orgId, active])
+  @@map("recurring_templates")
+}
+
+// ---------------------------------------------------------------------------
+// Job — the side-effect queue. Every outbound side effect goes through here. (§4.8, §8)
+// ---------------------------------------------------------------------------
+
+model Job {
+  id         String    @id @default(cuid())
+  orgId      String
+  type       JobType
+  payload    Json      @default("{}")
+  runAt      DateTime // earliest execution time
+  status     JobStatus @default(PENDING)
+  attempts   Int       @default(0)
+  maxRetries Int       @default(5)
+  lockedAt   DateTime? // worker lease; stale locks are reclaimed
+  lastError  String?
+  dedupeKey  String?   @unique // e.g. reminder:{taskId}:{runAtISO}
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt]) // the poll query
+  @@index([orgId, type, status])
+  @@map("jobs")
+}

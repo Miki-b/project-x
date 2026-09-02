@@ -1,0 +1,34 @@
+{
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "placeholder": "The manager dashboard is built during feature work."
+  },
+  "bot": {
+    "welcome": "Welcome to {{company}}!",
+    "ask_name": "What is your name?",
+    "joined": "You have joined {{company}}. You will receive your tasks here.",
+    "help": "Commands: /today, /mytasks, /language, /help",
+    "no_tasks_today": "You have no tasks due today.",
+    "language_changed": "Language updated.",
+    "ask_blocker_reason": "What is blocking this task?"
+  },
+  "task": {
+    "status": {
+      "PENDING": "Pending",
+      "IN_PROGRESS": "In progress",
+      "DONE": "Done",
+      "BLOCKED": "Blocked",
+      "CANCELLED": "Cancelled"
+    },
+    "button": {
+      "started": "Started",
+      "done": "Done",
+      "blocked": "Blocked"
+    }
+  }
+}

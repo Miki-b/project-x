@@ -1,0 +1,34 @@
+{
+  "common": {
+    "yes": "አዎ",
+    "no": "አይ",
+    "cancel": "ተወው"
+  },
+  "dashboard": {
+    "title": "ዳሽቦርድ",
+    "placeholder": "የአስተዳዳሪ ዳሽቦርድ በቀጣይ ስራ ይገነባል።"
+  },
+  "bot": {
+    "welcome": "ወደ {{company}} እንኳን ደህና መጡ!",
+    "ask_name": "ስምዎ ማን ነው?",
+    "joined": "{{company}} ተቀላቅለዋል። ተግባሮችዎን እዚህ ይቀበላሉ።",
+    "help": "ትዕዛዞች፦ /today, /mytasks, /language, /help",
+    "no_tasks_today": "ዛሬ የሚጠበቅ ተግባር የለዎትም።",
+    "language_changed": "ቋንቋ ተቀይሯል።",
+    "ask_blocker_reason": "ይህን ተግባር ምን አግዶታል?"
+  },
+  "task": {
+    "status": {
+      "PENDING": "በመጠባበቅ ላይ",
+      "IN_PROGRESS": "በሂደት ላይ",
+      "DONE": "ተጠናቋል",
+      "BLOCKED": "ታግዷል",
+      "CANCELLED": "ተሰርዟል"
+    },
+    "button": {
+      "started": "ጀምሯል",
+      "done": "ተጠናቋል",
+      "blocked": "ታግዷል"
+    }
+  }
+}
