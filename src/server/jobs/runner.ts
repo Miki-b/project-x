@@ -1,4 +1,4 @@
-import type { Job } from "@prisma/client";
+import type { Job } from "@/generated/prisma/client";
 // The runner is trusted cross-org INFRASTRUCTURE, not feature code, so it may import
 // basePrisma directly (docs/architecture.md §5 rule 2 exempts infrastructure). It must
 // never leak org data across tenants — the claim query operates on all orgs by design.

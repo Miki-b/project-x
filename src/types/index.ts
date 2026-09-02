@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma/client";
 
 /** Supported user locales (docs/product.md §8). */
 export type Locale = "en" | "am";

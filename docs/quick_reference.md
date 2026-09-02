@@ -17,7 +17,7 @@ Assign (dashboard) → deliver (Telegram) → employee taps Started/Done/Blocked
 
 ## Stack
 
-TypeScript · Next.js (App Router) · grammY · Prisma · PostgreSQL on Neon · `jobs` table + polling worker · Anthropic API · Tailwind · VPS + Coolify
+TypeScript · Next.js (App Router) · grammY · Prisma 7 (driver adapters, `@prisma/adapter-pg`) · PostgreSQL on Neon · `jobs` table + polling worker · Anthropic API · Tailwind · VPS + Coolify
 
 ## Hard rules
 
@@ -128,7 +128,8 @@ Requested out-of-scope features are recorded as feedback. Nothing is built until
 ## Gotchas
 
 - `BigInt` breaks `JSON.stringify` — convert Telegram IDs to strings at every boundary.
-- Prisma cannot migrate through Neon's pooler — `DIRECT_URL` is required.
+- Prisma cannot migrate through Neon's pooler — `DIRECT_URL` (set in `prisma.config.ts`) is required. App runtime uses `@prisma/adapter-pg` against the pooled `DATABASE_URL`.
+- Prisma 7 generates the client to `src/generated/prisma` (git-ignored, regenerated on install); import from `@/generated/prisma/client`.
 - Vercel hobby cron fires once daily, so the worker needs its own host.
 - Media is stored as Telegram `file_id`, not on our infrastructure.
 - Never trust `orgId` from a request body or parameter. Session only.

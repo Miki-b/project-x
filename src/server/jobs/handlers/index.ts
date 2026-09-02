@@ -1,4 +1,4 @@
-import type { JobType } from "@prisma/client";
+import type { JobType } from "@/generated/prisma/client";
 import type { JobHandler } from "../types";
 import { handleTaskReminder } from "./taskReminder";
 import { handleEndOfDayNudge } from "./endOfDayNudge";

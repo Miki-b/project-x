@@ -1,4 +1,4 @@
-import type { Job } from "@prisma/client";
+import type { Job } from "@/generated/prisma/client";
 import type { OrgDb } from "@/server/db/client";
 
 /** Job row metadata passed to a handler — everything except the raw `payload`. */

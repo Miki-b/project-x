@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Role, UserStatus, TaskStatus, TaskSource } from "@prisma/client";
+import { Role, UserStatus, TaskStatus, TaskSource } from "../src/generated/prisma/client";
 // Seeds reuse the single Prisma client constructed in src/server/db (docs/architecture.md §3).
 import { basePrisma as prisma } from "../src/server/db/client";
 

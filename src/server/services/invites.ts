@@ -1,4 +1,4 @@
-import type { Invite, User } from "@prisma/client";
+import type { Invite, User } from "@/generated/prisma/client";
 import type { Ctx } from "@/types";
 
 /**

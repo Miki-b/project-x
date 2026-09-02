@@ -10,17 +10,17 @@
 // never `db push` once the first migration exists.
 
 generator client {
-  provider = "prisma-client-js"
+  // Prisma 7: the TypeScript-generated client. `output` is mandatory and the client is
+  // emitted into the repo (git-ignored, regenerated on install) rather than node_modules.
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
-  // Pooled connection for the app at runtime.
-  url       = env("DATABASE_URL")
-  // Unpooled connection for Prisma Migrate — Prisma cannot migrate through Neon's pooler.
-  directUrl = env("DIRECT_URL")
-  // Uncomment if `migrate dev` cannot create a shadow database on Neon (see .env.example).
-  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "postgresql"
+  // Prisma 7: connection URLs live in prisma.config.ts, not here. The app connects at
+  // runtime via @prisma/adapter-pg (src/server/db/client.ts); the CLI reads the URL from
+  // prisma.config.ts (the unpooled DIRECT_URL — Prisma cannot migrate through Neon's pooler).
 }
 
 // ---------------------------------------------------------------------------

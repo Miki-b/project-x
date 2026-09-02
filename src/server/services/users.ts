@@ -1,4 +1,4 @@
-import type { Role, User, UserStatus } from "@prisma/client";
+import type { Role, User, UserStatus } from "@/generated/prisma/client";
 import type { Ctx } from "@/types";
 
 /**

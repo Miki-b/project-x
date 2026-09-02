@@ -10,8 +10,9 @@ inside Telegram; managers work entirely inside a web dashboard. See `docs/produc
 
 ## Stack
 
-TypeScript (strict) · Next.js App Router · grammY · Prisma 6 · PostgreSQL on Neon ·
-Tailwind · Zod · a `jobs` table + polling worker · Anthropic API.
+TypeScript (strict, ESM) · Next.js App Router · grammY · Prisma 7 (driver adapters,
+`@prisma/adapter-pg`) · PostgreSQL on Neon · Tailwind · Zod · a `jobs` table + polling
+worker · Anthropic API.
 
 ## Prerequisites
 
@@ -108,7 +109,9 @@ Built and verified against the following (resolved from the lockfile on 2026-09-
 | next | 16.3.4 |
 | react / react-dom | 19.2.8 |
 | typescript | 5.9.3 |
-| prisma / @prisma/client | 6.19.3 |
+| prisma / @prisma/client | 7.10.0 |
+| @prisma/adapter-pg | 7.10.0 |
+| pg | 8.x |
 | grammy | 1.46.0 |
 | zod | 4.5.4 |
 | @anthropic-ai/sdk | 0.123.0 |
@@ -123,8 +126,14 @@ Built and verified against the following (resolved from the lockfile on 2026-09-
 
 Notes on version policy (checked against the live registry, not memory):
 
-- **Prisma** was pinned to the latest **6.x** (`6.19.3`) as requested. The registry's latest
-  is `8.0.0-rc.12` (a release candidate) with `@prisma/client@7.10.0`; both were avoided.
+- **Prisma** is on the latest **7.x stable** (`7.10.0`). Prisma 7 removes the Rust engine
+  and requires a driver adapter — we use `@prisma/adapter-pg` against the pooled
+  `DATABASE_URL` (see architecture §13 for the rationale vs. `@prisma/adapter-neon`). The
+  generator is `prisma-client` with a mandatory `output`; the client is generated to
+  `src/generated/prisma` (git-ignored, regenerated via the `postinstall` script) and
+  imported from `@/generated/prisma/client`. Connection URLs live in `prisma.config.ts`,
+  not the schema. The project is ESM (`"type": "module"`). (The `prisma` CLI's `latest`
+  dist-tag is `8.0.0-rc.12`, an RC, which was avoided.)
 - **Next.js** current stable is `16.3.4` (App Router, Turbopack) — a major jump from the
   15.x era the docs implicitly assume. React is `19.x`, Tailwind is `4.x`, Zod is `4.x`,
   and ESLint is `9.x`. These are the coherent toolchain versions `create-next-app` pins.

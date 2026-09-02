@@ -1,4 +1,4 @@
-import type { RecurringTemplate } from "@prisma/client";
+import type { RecurringTemplate } from "@/generated/prisma/client";
 import type { Ctx } from "@/types";
 
 /**

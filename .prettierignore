@@ -1,5 +1,6 @@
 .next
 node_modules
+src/generated
 prisma/migrations
 src/lib/i18n/*.json
 package-lock.json

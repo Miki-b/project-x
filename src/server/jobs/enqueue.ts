@@ -1,4 +1,4 @@
-import type { JobType, Prisma } from "@prisma/client";
+import type { JobType, Prisma } from "@/generated/prisma/client";
 import type { Ctx } from "@/types";
 
 /**

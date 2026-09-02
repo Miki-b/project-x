@@ -12,7 +12,7 @@ Technical reference for the product described in `product.md`. This document is 
 | Web + API | Next.js (App Router) | Dashboard and API in one deployable |
 | Telegram bot | grammY | Best-in-class Telegram framework, first-class TS types |
 | Database | PostgreSQL on Neon | Free to start, serverless, branch-per-environment |
-| ORM | Prisma | Migration tooling, type generation, client extensions for tenant scoping |
+| ORM | Prisma 7 (driver adapters) | Migration tooling, type generation, client extensions for tenant scoping. No Rust engine — runs through `@prisma/adapter-pg` (see §13) |
 | Jobs | `jobs` table + polling worker | No Redis, no extra infrastructure, survives restarts |
 | Auth | Session cookie (Auth.js or Lucia) | Manager-only; employees never authenticate |
 | AI | Anthropic API | Task parsing, transcription handoff, summary writing |
@@ -298,11 +298,13 @@ npx prisma migrate deploy                         # staging and production
 ### Neon connection strings
 
 ```
-DATABASE_URL="postgresql://...-pooler.neon.tech/db?sslmode=require"   # pooled, app
-DIRECT_URL="postgresql://...neon.tech/db?sslmode=require"             # unpooled, migrations
+DATABASE_URL="postgresql://...-pooler.neon.tech/db?sslmode=require"   # pooled, app (@prisma/adapter-pg)
+DIRECT_URL="postgresql://...neon.tech/db?sslmode=require"             # unpooled, migrations (prisma.config.ts)
 ```
 
-Prisma cannot migrate through a pooler. If `migrate dev` complains about a shadow database, create a second empty Neon database and set `shadowDatabaseUrl`.
+**Prisma 7 config.** Connection URLs no longer live in `schema.prisma`. The datasource block declares only `provider`; the CLI reads `datasource.url` from `prisma.config.ts`, which we set to the unpooled `DIRECT_URL` (Prisma cannot migrate through a pooler). The application runtime connects separately through `@prisma/adapter-pg` against the pooled `DATABASE_URL` (see `src/server/db/client.ts`). Prisma 7 dropped `datasource.directUrl`, so this pooled/unpooled split is expressed across the two places rather than one datasource block. The generated client is emitted to `src/generated/prisma` (git-ignored, regenerated on install via the `postinstall` script).
+
+If `migrate dev` complains about a shadow database, create a second empty Neon database and set `shadowDatabaseUrl` in `prisma.config.ts`.
 
 ## 7. Service layer conventions
 
@@ -451,6 +453,10 @@ Two processes:
 - `worker` — job runner poll loop
 
 Both share the same codebase and the same service layer.
+
+### Database driver adapter
+
+Prisma 7 has no Rust engine and requires a driver adapter. We use **`@prisma/adapter-pg`** (node-postgres) against the **pooled** `DATABASE_URL`. Rationale: both `web` and `worker` are long-lived processes on a VPS, and we need **interactive transactions** — the status-change transaction (§7) and the job claim query with `FOR UPDATE SKIP LOCKED` (§8). The Neon serverless HTTP driver (`@prisma/adapter-neon` over HTTP) does **not** support interactive transactions, so it is the wrong fit here. `pg` also manages its own connection pool, which suits persistent processes. Migrations use the unpooled `DIRECT_URL` via `prisma.config.ts`. Moving to a serverless runtime later (which would favour the Neon adapter) must be a **deliberate** decision made against these transaction requirements, not a default.
 
 ### Environment
 

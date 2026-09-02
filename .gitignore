@@ -36,6 +36,8 @@ yarn-error.log*
 
 # prisma
 /prisma/*.db
+# Prisma 7 generated client — regenerated on install via the postinstall script.
+/src/generated
 
 # vercel
 .vercel

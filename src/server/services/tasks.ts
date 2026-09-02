@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from "@prisma/client";
+import type { Task, TaskStatus } from "@/generated/prisma/client";
 import type { Ctx } from "@/types";
 import type { TaskDraft } from "@/server/ai/schemas";
 

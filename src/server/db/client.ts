@@ -1,7 +1,14 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 /**
  * The ONE place a Prisma client is constructed (docs/architecture.md §3, §5).
+ *
+ * Prisma 7 has no Rust engine: the client runs through a driver adapter. We use
+ * @prisma/adapter-pg against the POOLED `DATABASE_URL` — both `web` and `worker` are
+ * long-lived processes on a VPS (§13) and need interactive transactions (§7 status
+ * changes, §8 job claim), which the Neon HTTP driver does not support. Migrations use the
+ * unpooled `DIRECT_URL` via prisma.config.ts instead.
  *
  * `basePrisma` performs NO tenant scoping. Feature code must NEVER import it.
  * Instead call `orgDb(ctx.orgId)`, which returns a scoped client that injects
@@ -14,9 +21,15 @@ import { PrismaClient } from "@prisma/client";
  * by hand (docs/architecture.md §5 rule 3).
  */
 
+function createPrisma(): PrismaClient {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL is not set");
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+}
+
 const globalForPrisma = globalThis as unknown as { basePrisma?: PrismaClient };
 
-export const basePrisma: PrismaClient = globalForPrisma.basePrisma ?? new PrismaClient();
+export const basePrisma: PrismaClient = globalForPrisma.basePrisma ?? createPrisma();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.basePrisma = basePrisma;
