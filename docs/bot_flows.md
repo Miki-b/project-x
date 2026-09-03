@@ -30,7 +30,7 @@ The bot keeps a tiny per-user state. Precedence is top-down: an earlier state wi
 | `awaiting_blocker_reason:{taskId}` | User taps **⛔ Blocked** on a task | They reply with a reason, or tap **✖️ Cancel** |
 | `idle` | Default | — |
 
-Separately, the bot tracks a **focused task** (not a blocking state): the task a user is currently acting on, used to attach proof. Focus = the task the incoming message **replies to**; if the message is not a reply, the task the user most recently tapped a button on within the last 15 minutes.
+Separately, the bot tracks a **focused task** (not a blocking state), used to attach proof. Focus = the task the incoming message **replies to**; otherwise the task the user tapped a button on **within the last 3 minutes**. Focus is never assumed on a stale interaction — past 3 minutes the bot asks which task the media belongs to (flow d). Proof is **never** attached silently to a guessed task.
 
 Message-handling precedence for an incoming non-command message:
 `awaiting_name` → `awaiting_blocker_reason` → proof attachment (if a task is focused) → fallback hint.
@@ -56,8 +56,9 @@ Message-handling precedence for an incoming non-command message:
 | `task.button.started` | ▶️ Started | ▶️ ጀመርኩ | "I've started this" |
 | `task.button.done` | ✅ Done | ✅ ጨረስኩ | "I've finished this" |
 | `task.button.blocked` | ⛔ I'm stuck | ⛔ ተቸግሬያለሁ | "Something is stopping me" |
-| `task.button.reopen` | ↩️ Reopen | ↩️ እንደገና ክፈት | "Actually, not done yet" |
 | `bot.button.cancel` | ✖️ Cancel | ✖️ ተወው | Cancel the current step |
+
+**Employees never reopen a task.** Only a manager can reopen (from the dashboard). A mis-tapped **Done** is fixed by telling the manager — so the bot shows no Reopen button anywhere.
 | `bot.button.lang_en` | 🇬🇧 English | 🇬🇧 English | Pick English |
 | `bot.button.lang_am` | 🇪🇹 አማርኛ | 🇪🇹 አማርኛ | Pick Amharic |
 
@@ -67,7 +68,6 @@ Message-handling precedence for an incoming non-command message:
 |---|---|---|
 | `bot.toast.started` | Marked as started ✓ | ተጀምሯል ✓ |
 | `bot.toast.done` | Marked as done ✓ | ተጠናቋል ✓ |
-| `bot.toast.reopened` | Reopened ✓ | እንደገና ተከፍቷል ✓ |
 | `bot.toast.blocked` | Tell me what's stopping you | ምን እንዳገዳዎት ንገሩኝ |
 | `bot.toast.cancelled` | Cancelled | ተሰርዟል |
 
@@ -99,6 +99,24 @@ Keys used to build it:
 
 A **new** task card prepends `task.card.new_badge` above the title. Reminder/nudge cards prepend their own header (§ flow f).
 
+### Title truncation
+
+The title must stay on **one line** so the card never exceeds its 4-line budget, and it must never break mid-word.
+
+- **Cap: 40 characters.** Chosen to fit one line on a small phone without wrapping.
+- If the title is longer, cut at the **last space at or before 39 characters** and append `…` (U+2026). Never split a word.
+- **Only exception:** if the very first word is itself longer than the cap (e.g. a long code or URL), hard-cut it at 39 characters + `…`. This is the single case a word may be split.
+- Trailing whitespace/punctuation before the `…` is trimmed.
+- The badge (`🆕`) and the `🗓/👤/▸` prefixes are not counted toward the 40.
+- The **full, untruncated title** always shows on the dashboard task detail; the bot never needs to show it in full.
+
+Examples:
+- `Deliver the Bole site report` (28) → unchanged.
+- `Deliver the quarterly VAT filing to the tax office by noon` (57) → `Deliver the quarterly VAT filing to the…`
+- `Reconcile-Q3-supplier-ledger-export-final-v2.xlsx` (one 49-char word) → `Reconcile-Q3-supplier-ledger-export-fi…`
+
+(40 is a starting value; confirm against real devices during implementation.)
+
 ### Buttons per status (what the card shows)
 
 | Status | Button row |
@@ -106,7 +124,7 @@ A **new** task card prepends `task.card.new_badge` above the title. Reminder/nud
 | Not started (`PENDING`) | `[▶️ Started] [✅ Done] [⛔ I'm stuck]` |
 | In progress (`IN_PROGRESS`) | `[✅ Done] [⛔ I'm stuck]` |
 | Stuck (`BLOCKED`) | `[▶️ Started] [✅ Done]` |
-| Done (`DONE`) | `[↩️ Reopen]` |
+| Done (`DONE`) | *(no buttons — employees can't reopen; a manager reopens from the dashboard)* |
 | Cancelled (`CANCELLED`) | *(no buttons — manager-only action)* |
 | Awaiting reason (transient) | `[✖️ Cancel]` |
 
@@ -135,13 +153,14 @@ Deliver the Bole site report
 
 | Key | English | Amharic |
 |---|---|---|
-| `bot.start.welcome_ask_name` | 👋 Welcome to {{company}}! What should we call you? Please type your name. | 👋 ወደ {{company}} እንኳን ደህና መጡ! ማን ብለን እንጥራዎት? እባክዎ ስምዎን ይጻፉ። |
-| `bot.start.joined` | ✅ Thanks, {{name}}! You've joined {{company}}. Your tasks will arrive here. | ✅ አመሰግናለሁ {{name}}! {{company}} ተቀላቅለዋል። ተግባሮችዎ እዚህ ይመጣሉ። |
+| `bot.start.welcome_ask_name` | 👋 Welcome to {{company}} on Telegram! This is where your manager sends your work tasks. You don't need to install anything or set anything up — when a task arrives, just tap a button on it. To finish joining, what's your name? | 👋 ወደ {{company}} እንኳን ደህና መጡ! ሥራ አስኪያጅዎ የሥራ ተግባሮችዎን የሚልኩበት ቦታ ይህ ነው። ምንም መጫን ወይም ማዘጋጀት አያስፈልግዎትም — ተግባር ሲደርስ በላዩ ላይ ያለውን አዝራር ብቻ ይንኩ። ለመጨረስ፣ ስምዎ ማን ነው? |
+| `bot.start.joined` | ✅ Thanks, {{name}}! You're all set. Your tasks will appear here — there's nothing else to do for now, just wait for your first one. | ✅ አመሰግናለሁ {{name}}! ሁሉም ተዘጋጅቷል። ተግባሮችዎ እዚህ ይታያሉ — ለአሁኑ ምንም ማድረግ አያስፈልግዎትም፤ የመጀመሪያውን ይጠብቁ። |
 | `bot.start.already_joined` | You're already set up, {{name}}. Type /today to see today's tasks. | አስቀድመው ተመዝግበዋል {{name}}። የዛሬ ተግባሮችን ለማየት /today ይጻፉ። |
 | `bot.blocked.ask_reason` | What's stopping you? Reply with a short note. | ምን አገዳዎት? በአጭሩ ይጻፉ። |
 | `bot.blocked.saved` | Got it — noted, and your manager can see it. | ተቀብያለሁ — መዝግቤዋለሁ፣ ሥራ አስኪያጅዎም ማየት ይችላሉ። |
 | `bot.proof.attached` | 📎 Added to "{{title}}". | 📎 ወደ "{{title}}" ተያይዟል። |
-| `bot.proof.no_task` | Reply to a task message to attach a photo, voice note, or text to it. | ፎቶ፣ የድምፅ መልእክት ወይም ጽሑፍ ለማያያዝ ወደ ተግባሩ መልእክት ምላሽ ይስጡ። |
+| `bot.proof.which_task` | Which task is this for? | ይህ ለየትኛው ተግባር ነው? |
+| `bot.proof.no_open_tasks` | You have no open tasks to attach this to. | ይህን የሚያያዝ ክፍት ተግባር የለዎትም። |
 | `bot.proof.ask_reason_instead` | Thanks — I saved that. Now please type what's stopping you. | አመሰግናለሁ — አስቀምጫለሁ። አሁን ምን እንዳገዳዎት ይጻፉ። |
 | `bot.today.header` | 📅 Today — {{count}} task(s) | 📅 ዛሬ — {{count}} ተግባር |
 | `bot.today.none` | You have no tasks due today. 🎉 | ዛሬ የሚጠበቅ ተግባር የለዎትም። 🎉 |
@@ -204,9 +223,8 @@ Error branches at step 1:
 | Tap | Toast | Card becomes | New buttons |
 |---|---|---|---|
 | ▶️ Started | `bot.toast.started` | `▸ In progress` | `[✅ Done] [⛔ I'm stuck]` |
-| ✅ Done | `bot.toast.done` | `✅ Done {{when}}` (via `task.card.done_at`) | `[↩️ Reopen]` |
+| ✅ Done | `bot.toast.done` | `✅ Done {{when}}` (via `task.card.done_at`) | *(none — a manager reopens from the dashboard)* |
 | ⛔ I'm stuck | `bot.toast.blocked` | *(enters flow c)* | `[✖️ Cancel]` |
-| ↩️ Reopen (from Done) | `bot.toast.reopened` | `▸ In progress` | `[✅ Done] [⛔ I'm stuck]` |
 
 Every tap is **idempotent** (Telegram redelivers): a repeated tap re-renders the same state, never double-writes. Allowed transitions follow the state machine (docs/architecture.md §7); a tap that isn't allowed just re-renders current state with no change.
 
@@ -237,10 +255,19 @@ Edge: if the user sends a **photo/voice** (not text) while `awaiting_blocker_rea
 
 ### d. Photo / voice / text sent while a task is in focus → proof attached
 
-- **Focus rule:** the message is a reply to a task card → that task; otherwise the task the user last tapped within 15 minutes.
-- Any photo, voice note, or text (that isn't a command and isn't consumed by a higher-precedence state) is stored as a **PROOF** `task_updates` row (we keep Telegram's `file_id`, we don't store the media, §4.6). Confirm with `bot.proof.attached`.
-- No task in focus → `bot.proof.no_task`.
-- A linked user sends stray text with nothing in focus and no reply → `bot.hint.use_buttons`.
+- **Focus rule:** the message replies to a task card → that task; otherwise the task the user tapped a button on **within the last 3 minutes**. Nothing qualifies past 3 minutes — focus is never assumed on a stale interaction.
+- With a task in focus, a photo, voice note, or text (not a command, not consumed by a higher-precedence state) is stored as a **PROOF** `task_updates` row (we keep Telegram's `file_id`; we don't store the media, §4.6). Confirm with `bot.proof.attached` (`{{title}}`).
+- **Nothing in focus, user has open tasks** → do **not** guess. Hold the media and ask `bot.proof.which_task` with **one button per open task** (button label = the task's truncated title). The user taps the task → the held media attaches to it → confirm with `bot.proof.attached`.
+  ```
+  Which task is this for?                  ← bot.proof.which_task
+  [Deliver the Bole site report]
+  [Follow up with the supplier]
+  [Repair the office generator]
+  ```
+- **Nothing in focus, no open tasks** → `bot.proof.no_open_tasks`.
+- Stray **text** (not media) with nothing in focus and no reply → `bot.hint.use_buttons`.
+
+A plain text message becomes a proof note **only** when a task is in focus. With nothing focused, casual text is never silently filed against a task — the bot asks or hints instead.
 
 ### e. Commands
 
@@ -249,7 +276,7 @@ Edge: if the user sends a **photo/voice** (not text) while `awaiting_blocker_rea
 - None: `bot.today.none`.
 
 **/mytasks** — all open tasks (Not started, In progress, Stuck).
-- Has tasks: `bot.mytasks.header` `{{count}}`, then one card per task.
+- Has tasks: `bot.mytasks.header` `{{count}}`, then one card per task as a **flat list sorted by due date, overdue first** (earliest due at the top; tasks with no due date go last). **No grouping by status.**
 - None: `bot.mytasks.none`.
 
 **/language** — toggle language.
@@ -339,4 +366,11 @@ Delivered to the **manager's** Telegram (the manager's only bot contact, docs/pr
 - Handlers stay thin: parse → call a service → render (§9). All copy comes from `messages/` builders over these keys; nothing hardcoded.
 - `{{due}}` / `{{when}}` / `{{date}}` are pre-formatted by `lib/time.ts` (+ optional Ethiopian date) before they reach a message builder.
 - Card rendering reads the **current** task status from the DB at send time, so reminders/nudges are always accurate even if an older card exists.
-- Open questions to resolve before coding: (1) should **Done** offer `↩️ Reopen` indefinitely or only for a short window? (2) group `/mytasks` cards by status with a header per group, or a flat list? (3) exact focus window (15 min assumed) for proof attachment.
+- **Copy register:** plain speech over literal translation, in both languages. Keep "I'm stuck" / "ተቸግሬያለሁ" and "Not started" / "አልተጀመረም"; write every other string the same way — for someone who has never used a task tracker.
+
+### Resolved decisions
+
+1. **Reopen:** no time window and no employee reopen. Only a manager reopens (any task, from the dashboard). A mis-tapped Done is fixed by telling the manager; the bot shows no Reopen button.
+2. **/mytasks:** flat list sorted by due date, overdue first (no due date last). No status grouping.
+3. **Proof focus:** 3-minute window from the last interaction. With nothing in focus, ask which task (one button per open task); never attach on a stale focus.
+4. **Title truncation:** one line, 40-character cap, cut on a word boundary with `…`, never mid-word (see §3).
