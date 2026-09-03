@@ -61,6 +61,28 @@ process) and via **long polling in development**:
 npm run bot:dev   # local only: bot via long polling
 ```
 
+### Mini App in development (https tunnel)
+
+The employee **Mini App** launches from the bot's "Open Tasks" Web App button, and Telegram
+requires **https** for Web App buttons. In local dev, expose the dev server over https with a
+tunnel and point `NEXT_PUBLIC_APP_URL` at it:
+
+```bash
+# 1) run the dev server
+npm run dev
+
+# 2) in another terminal, start a tunnel to localhost:3000
+cloudflared tunnel --url http://localhost:3000
+# → prints an https URL like https://something.trycloudflare.com
+
+# 3) set this in .env (and restart bot:dev so it picks it up)
+NEXT_PUBLIC_APP_URL="https://something.trycloudflare.com"
+```
+
+Then the "Open Tasks" button opens the Mini App at that URL. Without a tunnel the button
+won't work, but the inline Started/Done/Blocked buttons still do. (`cloudflared` install:
+<https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/>.)
+
 ## Scripts
 
 | Script | Purpose |

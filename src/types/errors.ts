@@ -40,3 +40,27 @@ export class InviteExpired extends DomainError {
     super("Invite has expired");
   }
 }
+
+export class ReasonRequired extends DomainError {
+  constructor() {
+    super("A blocker reason is required");
+  }
+}
+
+export class ProofEmpty extends DomainError {
+  constructor() {
+    super("Proof needs a photo, voice note, or text");
+  }
+}
+
+export class InitDataInvalid extends DomainError {
+  constructor() {
+    super("Invalid Telegram init data");
+  }
+}
+
+export class InitDataExpired extends DomainError {
+  constructor() {
+    super("Telegram init data has expired");
+  }
+}

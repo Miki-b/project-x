@@ -116,7 +116,7 @@ UserStatus  INVITED | ACTIVE | DISABLED
 TaskStatus  PENDING | IN_PROGRESS | DONE | BLOCKED | CANCELLED
 TaskSource  MANUAL | AI_TEXT | AI_VOICE | RECURRING
 UpdateType  ASSIGNMENT | STATUS_CHANGE | COMMENT | PROOF | REMINDER_SENT
-JobType     TASK_REMINDER | END_OF_DAY_NUDGE | DAILY_SUMMARY | RECURRING_GENERATE | AI_PARSE
+JobType     TASK_REMINDER | TASK_NOTIFICATION | END_OF_DAY_NUDGE | DAILY_SUMMARY | RECURRING_GENERATE | AI_PARSE
 JobStatus   PENDING | RUNNING | DONE | FAILED | CANCELLED
 ```
 
@@ -151,6 +151,7 @@ Employees and managers. Employees never have a password — Telegram identity is
 | email | String? | Manager login. **Globally `@unique`** (login has no org context); null for employees |
 | passwordHash | String? | scrypt hash (§11); null for employees |
 | lastLoginAt | DateTime? | Stamped on successful login |
+| pendingBlockReason | String? | Durable bot state: the taskId this user is being asked to give a blocker reason for (bot flow c), or null |
 
 **Constraints:** `@@unique([orgId, telegramUserId])`, `@@unique([orgId, phone])`, `@email @unique` (global), `@@index([orgId, status])`, `@@index([telegramUserId])`.
 
@@ -396,6 +397,7 @@ Handlers receive an already org-scoped client and never construct or reach an un
 | Type | Enqueued when | Does |
 |---|---|---|
 | `TASK_REMINDER` | Task created or `dueAt` changed | Sends a Telegram reminder before the deadline |
+| `TASK_NOTIFICATION` | Task status changes | Sends/edits the assignee's Telegram task card to reflect the new status |
 | `END_OF_DAY_NUDGE` | Daily sweep | Messages assignees with untouched tasks |
 | `DAILY_SUMMARY` | Daily sweep per org | Sends the manager an AI-written recap |
 | `RECURRING_GENERATE` | Daily sweep per org | Materialises tasks from active templates |
@@ -494,10 +496,12 @@ Prisma 7 has no Rust engine and requires a driver adapter. We use **`@prisma/ada
 DATABASE_URL           pooled Neon connection
 DIRECT_URL             unpooled Neon connection, migrations only
 TELEGRAM_BOT_TOKEN
+TELEGRAM_BOT_USERNAME  builds the invite deep link
 TELEGRAM_WEBHOOK_SECRET
 ANTHROPIC_API_KEY
 SESSION_SECRET
 APP_URL
+NEXT_PUBLIC_APP_URL    public https URL for the Mini App Web App button (tunnel in dev)
 NODE_ENV
 ```
 
@@ -519,3 +523,49 @@ The path when growth actually demands it, in order:
 6. Consider Postgres row-level security as a second layer behind the `orgDb` extension
 
 The architecture above supports every one of these without a rewrite, which is the actual definition of scalable at this stage.
+
+## 15. Mini App (employee web surface)
+
+The employee experience is the Telegram **bot chat** (inline buttons), plus a Telegram **Mini App** — a mobile web view launched from inside Telegram for richer interactions (a task list and task detail with history). It is **not** a second app to install and **not** a Mini App-only experience; the bot chat remains the primary surface and every action also works as a chat button.
+
+### Folder structure
+
+```
+/src/app/miniapp
+  layout.tsx               loads the Telegram Web App SDK; mobile-first shell
+  page.tsx                 task list (flat, due-sorted, overdue first)
+  tasks/[id]/page.tsx      task detail + status actions + proof
+  MiniAppAuth.tsx          client: reads initData, exchanges it for a session, refreshes
+  TaskActions.tsx          client: Start / I'm done / I'm stuck + text-note proof
+  actions.ts               server actions -> task service (MEMBER Ctx)
+  ui.tsx                   status badge + due formatting
+/src/app/api/miniapp/auth/route.ts   POST initData -> session cookie
+/src/server/auth/telegram-init-data.ts   HMAC verification
+```
+
+### Auth flow
+
+1. Telegram opens `/miniapp` in a web view and exposes `window.Telegram.WebApp.initData` (a signed query string).
+2. `MiniAppAuth` posts `initData` to `POST /api/miniapp/auth`.
+3. The server verifies it (below) and issues **the same session cookie the dashboard uses** — one `sessions` row, one `validateSession` path. This is not a parallel auth system.
+4. Server components read the session via `getMiniAppCtx()`, which builds a `Ctx` with **`role` always `MEMBER`** and `orgId` taken from the matched users row — never from `initData`.
+
+### initData verification (`server/auth/telegram-init-data.ts`)
+
+Telegram's algorithm, timing-safe:
+
+```
+data_check_string = every field except `hash`, as `key=value`, sorted by key, '\n'-joined
+secret_key        = HMAC_SHA256(key="WebAppData", message=<bot_token>)
+expected_hash     = HMAC_SHA256(key=secret_key, message=data_check_string)
+```
+
+Rejected if the hash mismatches or `auth_date` is older than **5 minutes** (replay protection). The verifier returns only the Telegram user id; the org is resolved from the DB.
+
+### https requirement
+
+Telegram Web App buttons require an **https** URL. The bot builds the "Open Tasks" button from `NEXT_PUBLIC_APP_URL`. In local development this must be a tunnel (e.g. `cloudflared`) pointing at the dev server — see the README.
+
+### Proof: text now, photos via the bot
+
+The Mini App attaches **text-note** proof only. Photos are **not** uploaded through the Mini App: we store Telegram `file_id`s, not media (§4.6), and a browser upload has no `file_id`. The Mini App tells the user to send photos to the bot, where Telegram provides a `file_id`. Do **not** add a file-upload endpoint — it contradicts §4.6.

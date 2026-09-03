@@ -39,7 +39,7 @@ Eight tables. All except `organizations` carry `orgId`.
 | Table | Purpose | Key fields |
 |---|---|---|
 | `organizations` | Tenant root | name, timezone, locale, plan |
-| `users` | Employees + managers | orgId, name, telegramUserId, telegramChatId, role, status, email, passwordHash, lastLoginAt |
+| `users` | Employees + managers | orgId, name, telegramUserId, telegramChatId, role, status, email, passwordHash, lastLoginAt, pendingBlockReason |
 | `invites` | Join links | orgId, token, role, expiresAt, usedById |
 | `tasks` | Core object | orgId, title, assigneeId, createdById, dueAt, status, source, templateId, completedAt |
 | `task_updates` | Append-only history | orgId, taskId, actorId, type, from/toStatus, note, telegramFileId |
@@ -55,7 +55,7 @@ UserStatus  INVITED | ACTIVE | DISABLED
 TaskStatus  PENDING | IN_PROGRESS | DONE | BLOCKED | CANCELLED
 TaskSource  MANUAL | AI_TEXT | AI_VOICE | RECURRING
 UpdateType  ASSIGNMENT | STATUS_CHANGE | COMMENT | PROOF | REMINDER_SENT
-JobType     TASK_REMINDER | END_OF_DAY_NUDGE | DAILY_SUMMARY | RECURRING_GENERATE | AI_PARSE
+JobType     TASK_REMINDER | TASK_NOTIFICATION | END_OF_DAY_NUDGE | DAILY_SUMMARY | RECURRING_GENERATE | AI_PARSE
 JobStatus   PENDING | RUNNING | DONE | FAILED | CANCELLED
 ```
 
@@ -134,7 +134,8 @@ Requested out-of-scope features are recorded as feedback. Nothing is built until
 - Prisma 7 generates the client to `src/generated/prisma` (git-ignored, regenerated on install); import from `@/generated/prisma/client`.
 - Vercel hobby cron fires once daily, so the worker needs its own host.
 - Media is stored as Telegram `file_id`, not on our infrastructure.
-- Never trust `orgId` from a request body or parameter. Session only.
+- Never trust `orgId` from a request body or parameter. Session only. (Mini App: also never from `initData` — resolve the user by `telegramUserId`, role is always `MEMBER`.)
+- Mini App "Open Tasks" button needs **https** (`NEXT_PUBLIC_APP_URL`; tunnel in dev). Mini App proof is **text-only** — photos go via the bot (we store `file_id`s, not uploads).
 
 ## Success metric that matters
 

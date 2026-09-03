@@ -6,11 +6,29 @@ import type { Session, User } from "@/generated/prisma/client";
 import { basePrisma } from "@/server/db/client";
 import { verifyPassword } from "@/lib/password";
 import { generateSessionToken, hashSessionToken } from "@/lib/session-token";
+import { verifyInitData } from "@/server/auth/telegram-init-data";
 import { NotAuthorised } from "@/types";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export type AuthenticatedSession = { token: string; session: Session; user: User };
+
+/** Mint a session for a user (shared by password login and Mini App auth). */
+export async function createSession(
+  userId: string,
+  orgId: string,
+): Promise<{ token: string; session: Session }> {
+  const token = generateSessionToken();
+  const session = await basePrisma.session.create({
+    data: {
+      id: hashSessionToken(token),
+      orgId,
+      userId,
+      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+    },
+  });
+  return { token, session };
+}
 
 /**
  * Authenticate a manager by email + password. On success creates a session and stamps
@@ -25,22 +43,32 @@ export async function login(email: string, password: string): Promise<Authentica
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) throw new NotAuthorised("Invalid email or password");
 
-  const token = generateSessionToken();
-  const now = new Date();
-  const session = await basePrisma.session.create({
-    data: {
-      id: hashSessionToken(token),
-      orgId: user.orgId,
-      userId: user.id,
-      expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
-    },
-  });
+  const { token, session } = await createSession(user.id, user.orgId);
   const updatedUser = await basePrisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: now },
+    data: { lastLoginAt: new Date() },
   });
 
   return { token, session, user: updatedUser };
+}
+
+/**
+ * Authenticate a Mini App request from Telegram `initData` (docs/architecture.md §11).
+ * Verifies the HMAC + freshness, resolves the user by `telegramUserId`, and issues a
+ * session. `orgId` always comes from the matched users row — never from `initData`.
+ */
+export async function authenticateMiniApp(
+  initData: string,
+): Promise<{ token: string; session: Session; user: User }> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not set");
+
+  const { telegramUserId } = verifyInitData(initData, token); // throws on tamper / staleness
+  const user = await basePrisma.user.findFirst({ where: { telegramUserId } });
+  if (!user || user.status !== "ACTIVE") throw new NotAuthorised();
+
+  const created = await createSession(user.id, user.orgId);
+  return { token: created.token, session: created.session, user };
 }
 
 /** Resolve a raw cookie token to its session + user, or null if missing/expired. */

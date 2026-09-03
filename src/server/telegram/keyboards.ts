@@ -1,10 +1,52 @@
 import { InlineKeyboard } from "grammy";
+import type { TaskStatus } from "@/generated/prisma/client";
 import type { Locale } from "@/types";
+import { t } from "@/lib/i18n";
 
 /**
- * Inline keyboard shown on a task message: Started · Done · Blocked (docs/architecture.md §9).
- * Callback data carries the taskId and target status; button labels come from i18n.
+ * Inline keyboards for a task card (docs/bot_flows.md §3, flow b). Row 1 is the "Open Tasks"
+ * Web App button; row 2 is the status-specific fallback actions. Callback data is `t:<action>:<taskId>`.
+ * Web App buttons require an https `appUrl` at send time.
  */
-export function taskKeyboard(_taskId: string, _locale: Locale): InlineKeyboard {
-  throw new Error("not implemented");
+export function taskKeyboard(
+  taskId: string,
+  status: TaskStatus,
+  locale: Locale,
+  appUrl: string,
+): InlineKeyboard {
+  const kb = new InlineKeyboard()
+    .webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`)
+    .row();
+
+  const started = () => kb.text(t(locale, "task.button.started"), `t:start:${taskId}`);
+  const done = () => kb.text(t(locale, "task.button.done"), `t:done:${taskId}`);
+  const blocked = () => kb.text(t(locale, "task.button.blocked"), `t:block:${taskId}`);
+
+  switch (status) {
+    case "PENDING":
+      started();
+      done();
+      blocked();
+      break;
+    case "IN_PROGRESS":
+      done();
+      blocked();
+      break;
+    case "BLOCKED":
+      started();
+      done();
+      break;
+    case "DONE":
+    case "CANCELLED":
+      break;
+  }
+  return kb;
+}
+
+/** Keyboard while awaiting a blocker reason (flow c): only Cancel (+ Open Tasks). */
+export function reasonKeyboard(taskId: string, locale: Locale, appUrl: string): InlineKeyboard {
+  return new InlineKeyboard()
+    .webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`)
+    .row()
+    .text(t(locale, "bot.button.cancel"), `t:cancelblock:${taskId}`);
 }

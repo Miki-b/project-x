@@ -29,6 +29,36 @@
     "MANAGER": "Manager",
     "MEMBER": "Member"
   },
+  "miniapp": {
+    "title": "Your tasks",
+    "empty": "You have no tasks right now.",
+    "open_from_telegram": "Open this from Telegram to see your tasks.",
+    "authenticating": "Loading…",
+    "auth_failed": "Couldn't verify you. Open this from Telegram and try again.",
+    "back": "← Back",
+    "history": "History",
+    "assigned_to": "Assigned to",
+    "due": "Due {{due}}",
+    "no_due": "No due date",
+    "overdue": "Overdue",
+    "add_proof": "Add proof",
+    "note_placeholder": "Add a note…",
+    "attach": "Attach",
+    "photo_hint": "To attach a photo, send it to the bot in Telegram for now.",
+    "blocked_reason_placeholder": "What's stopping you?",
+    "action": {
+      "start": "Start",
+      "done": "I'm done",
+      "blocked": "I'm stuck"
+    },
+    "update": {
+      "ASSIGNMENT": "Assigned",
+      "STATUS_CHANGE": "Status changed",
+      "PROOF": "Proof added",
+      "COMMENT": "Comment",
+      "REMINDER_SENT": "Reminder sent"
+    }
+  },
   "bot": {
     "start": {
       "welcome_ask_name": "👋 Welcome to {{company}} on Telegram! This is where your manager sends your work tasks. You don't need to install anything or set anything up — when a task arrives, just tap a button on it. To finish joining, what's your name?",
@@ -40,10 +70,26 @@
       "invite_expired": "This invite link has expired. Please ask your manager for a new one.",
       "no_token": "To join, tap the invite link your manager shared in your group.",
       "unknown_user": "I don't know you yet. Tap your company's invite link to join.",
+      "task_unavailable": "This task isn't available to you.",
+      "task_gone": "This task no longer exists.",
       "generic": "Something went wrong. Please try again in a moment."
     },
     "hint": {
       "use_buttons": "To update a task, tap its buttons. Type /help to see what I can do."
+    },
+    "button": {
+      "open_tasks": "📋 Open Tasks",
+      "cancel": "✖️ Cancel"
+    },
+    "blocked": {
+      "ask_reason": "What's stopping you? Reply with a short note.",
+      "saved": "Got it — noted, and your manager can see it."
+    },
+    "toast": {
+      "started": "Marked as started ✓",
+      "done": "Marked as done ✓",
+      "blocked": "Tell me what's stopping you",
+      "cancelled": "Cancelled"
     }
   },
   "task": {
@@ -58,6 +104,15 @@
       "started": "▶️ Started",
       "done": "✅ Done",
       "blocked": "⛔ I'm stuck"
+    },
+    "card": {
+      "new_badge": "🆕 New task",
+      "due": "🗓 {{due}}",
+      "no_due": "🗓 No date set",
+      "from": "👤 {{manager}}",
+      "status": "▸ {{status}}",
+      "blocked_reason": "⛔ Stuck: {{reason}}",
+      "done_at": "✅ Done {{when}}"
     }
   }
 }

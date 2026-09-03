@@ -57,3 +57,25 @@ export async function getCurrentCtx(): Promise<Ctx | null> {
     locale: "en",
   };
 }
+
+/**
+ * Build the actor `Ctx` for a Mini App request. Same session cookie as the dashboard, but
+ * the role is **always MEMBER** (docs/architecture.md §11) — the employee surface can only
+ * act on the actor's own tasks, regardless of the user's actual role. `orgId` comes from
+ * the session (the users row), never from initData.
+ */
+export async function getMiniAppCtx(): Promise<Ctx | null> {
+  const store = await cookies();
+  const token = store.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+
+  const result = await validateSession(token);
+  if (!result) return null;
+
+  return {
+    orgId: result.session.orgId,
+    actorId: result.user.id,
+    role: "MEMBER",
+    locale: "en",
+  };
+}
