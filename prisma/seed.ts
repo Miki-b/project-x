@@ -2,6 +2,11 @@ import "dotenv/config";
 import { Role, UserStatus, TaskStatus, TaskSource } from "../src/generated/prisma/client";
 // Seeds reuse the single Prisma client constructed in src/server/db (docs/architecture.md §3).
 import { basePrisma as prisma } from "../src/server/db/client";
+import { hashPassword } from "../src/lib/password";
+
+// Dev-only manager credentials so the dashboard is immediately loggable-in after seeding.
+const OWNER_EMAIL = "owner@acme.test";
+const OWNER_PASSWORD = "password123";
 
 /**
  * Seed one organisation, one owner, two members, and a few tasks in different statuses
@@ -14,7 +19,14 @@ async function main(): Promise<void> {
   });
 
   const owner = await prisma.user.create({
-    data: { orgId: org.id, name: "Selamawit", role: Role.OWNER, status: UserStatus.ACTIVE },
+    data: {
+      orgId: org.id,
+      name: "Selamawit",
+      role: Role.OWNER,
+      status: UserStatus.ACTIVE,
+      email: OWNER_EMAIL,
+      passwordHash: await hashPassword(OWNER_PASSWORD),
+    },
   });
 
   const abebe = await prisma.user.create({
@@ -65,6 +77,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`Seeded org ${org.id}: 1 owner, 2 members, 4 tasks.`);
+  console.log(`Manager login (dev): ${OWNER_EMAIL} / ${OWNER_PASSWORD}`);
 }
 
 main()

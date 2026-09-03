@@ -34,17 +34,18 @@ TypeScript · Next.js (App Router) · grammY · Prisma 7 (driver adapters, `@pri
 
 ## Data model
 
-Seven tables. All except `organizations` carry `orgId`.
+Eight tables. All except `organizations` carry `orgId`.
 
 | Table | Purpose | Key fields |
 |---|---|---|
 | `organizations` | Tenant root | name, timezone, locale, plan |
-| `users` | Employees + managers | orgId, name, telegramUserId, telegramChatId, role, status |
+| `users` | Employees + managers | orgId, name, telegramUserId, telegramChatId, role, status, email, passwordHash, lastLoginAt |
 | `invites` | Join links | orgId, token, role, expiresAt, usedById |
 | `tasks` | Core object | orgId, title, assigneeId, createdById, dueAt, status, source, templateId, completedAt |
 | `task_updates` | Append-only history | orgId, taskId, actorId, type, from/toStatus, note, telegramFileId |
 | `recurring_templates` | Repeat rules | orgId, title, assigneeId, rule, timeOfDay, active, lastGeneratedOn |
 | `jobs` | Side-effect queue | orgId, type, payload, runAt, status, attempts, lockedAt, dedupeKey |
+| `sessions` | Manager web sessions | id (=SHA-256 of cookie token), orgId, userId, expiresAt |
 
 ### Enums
 
@@ -60,7 +61,8 @@ JobStatus   PENDING | RUNNING | DONE | FAILED | CANCELLED
 
 ### Constraints worth remembering
 
-- `users`: unique `[orgId, telegramUserId]` and `[orgId, phone]` — **per-org, not global**, so one person can serve two companies later.
+- `users`: unique `[orgId, telegramUserId]` and `[orgId, phone]` — **per-org, not global**, so one person can serve two companies later. But `users.email` is **globally unique** (manager login has no org context).
+- `sessions.id` is the **SHA-256 hash of the cookie token** (raw token only in the httpOnly cookie); sessions cascade from both org and user.
 - `tasks.assigneeId` and `tasks.createdById` are `Restrict` — history cannot be orphaned.
 - `task_updates`, `tasks`, `jobs`, `invites`, `templates` all cascade from `organizations`.
 - `jobs.dedupeKey` is unique — prevents duplicate reminders.

@@ -14,7 +14,7 @@ Technical reference for the product described in `product.md`. This document is 
 | Database | PostgreSQL on Neon | Free to start, serverless, branch-per-environment |
 | ORM | Prisma 7 (driver adapters) | Migration tooling, type generation, client extensions for tenant scoping. No Rust engine — runs through `@prisma/adapter-pg` (see §13) |
 | Jobs | `jobs` table + polling worker | No Redis, no extra infrastructure, survives restarts |
-| Auth | Session cookie (Auth.js or Lucia) | Manager-only; employees never authenticate |
+| Auth | Hand-rolled session cookie (scrypt + `sessions` table) | Manager-only; employees never authenticate. Lucia (the library) is deprecated; Auth.js rejected — it imposes its own schema and fights the per-org model |
 | AI | Anthropic API | Task parsing, transcription handoff, summary writing |
 | Styling | Tailwind | Speed |
 | Deploy | Single VPS with Coolify, or Vercel + separate worker host | See §13 |
@@ -65,6 +65,9 @@ Employees (Telegram)          Managers (Web dashboard)
       invites.ts
       templates.ts
       summaries.ts
+      auth.ts              login, validateSession, invalidateSession (transport-free)
+    /auth
+      session.ts           web session adapter — cookie <-> auth service (imports next/headers)
     /db
       client.ts            basePrisma + orgDb() extension
       repositories/        thin query helpers, org-scoped
@@ -87,6 +90,8 @@ Employees (Telegram)          Managers (Web dashboard)
   /lib
     time.ts                UTC ↔ Africa/Addis_Ababa
     ethiopian-calendar.ts  display conversion only
+    password.ts            scrypt hash/verify (node:crypto)
+    session-token.ts       session token generation + SHA-256 hashing
     i18n/
       en.json
       am.json
@@ -101,7 +106,7 @@ The **worker** process runs the job runner poll loop only. The Telegram bot runs
 
 ## 4. Data model
 
-Seven tables. All application tables except `organizations` carry `orgId`.
+Eight tables. All application tables except `organizations` carry `orgId`.
 
 ### 4.1 Enums
 
@@ -143,8 +148,13 @@ Employees and managers. Employees never have a password — Telegram identity is
 | telegramLinkedAt | DateTime? | |
 | role | Role | Default `MEMBER` |
 | status | UserStatus | Default `INVITED` |
+| email | String? | Manager login. **Globally `@unique`** (login has no org context); null for employees |
+| passwordHash | String? | scrypt hash (§11); null for employees |
+| lastLoginAt | DateTime? | Stamped on successful login |
 
-**Constraints:** `@@unique([orgId, telegramUserId])`, `@@unique([orgId, phone])`, `@@index([orgId, status])`, `@@index([telegramUserId])`.
+**Constraints:** `@@unique([orgId, telegramUserId])`, `@@unique([orgId, phone])`, `@email @unique` (global), `@@index([orgId, status])`, `@@index([telegramUserId])`.
+
+**Email is globally unique, unlike telegram/phone:** manager login is email + password with no org typed, so the email must resolve to exactly one account. A person managing two companies uses two emails (or a later org switcher) — the same tradeoff as the per-org note below, resolved the other way because login needs a single global lookup.
 
 **Why per-org uniqueness, not global:** a consultant or accountant may eventually work with two companies. Global uniqueness forces a painful migration the day that happens. For v1 the bot resolves `telegramUserId` to a single row and proceeds; when a second row appears, add an org switcher rather than a schema change.
 
@@ -245,7 +255,23 @@ Every outbound side effect goes through this table.
 
 `dedupeKey` is what stops an employee getting the same reminder twice when a retry overlaps a fresh enqueue.
 
-### 4.9 Relationship summary
+### 4.9 `sessions`
+
+Manager web sessions (§11). Hand-rolled — no Auth.js. Employees never authenticate.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String PK | **SHA-256 hash of the cookie token** (set explicitly, never a cuid) so a DB leak exposes no live tokens |
+| orgId | FK → organizations | Cascade |
+| userId | FK → users | Cascade |
+| expiresAt | DateTime | Checked on every validate; expired rows are deleted |
+| createdAt | DateTime | |
+
+**Indexes:** `[userId]`, `[orgId]`, `[expiresAt]`.
+
+The raw high-entropy token lives only in the httpOnly cookie; we store and look up by its hash. `orgId` on the session is the sole source of tenant identity for the dashboard — never trusted from a request.
+
+### 4.10 Relationship summary
 
 ```
 Organization 1─* User
@@ -254,12 +280,14 @@ Organization 1─* Task
 Organization 1─* TaskUpdate
 Organization 1─* RecurringTemplate
 Organization 1─* Job
+Organization 1─* Session
 
 User 1─* Task            (as assignee, Restrict)
 User 1─* Task            (as creator, Restrict)
 User 1─* TaskUpdate      (as actor, SetNull)
 User 1─* RecurringTemplate (as assignee, Restrict)
 User 1─1 Invite          (as the user who consumed it, SetNull)
+User 1─* Session         (Cascade)
 
 Task 1─* TaskUpdate      (Cascade)
 RecurringTemplate 1─* Task (SetNull)
@@ -426,6 +454,8 @@ Rules:
 ## 11. Auth and permissions
 
 - Managers authenticate with email plus a session cookie. Employees never authenticate — Telegram identity is the credential.
+- **Hand-rolled sessions, not Auth.js.** Passwords are scrypt-hashed (`src/lib/password.ts`, `node:crypto`, no dependency). A login mints a high-entropy token; only its SHA-256 hash is stored (`sessions.id`), and the raw token lives in an httpOnly cookie. The auth service (`server/services/auth.ts`) is transport-free — `login` / `validateSession` / `invalidateSession`; cookie handling lives in the web adapter (`server/auth/session.ts`, which reads `next/headers`). Auth.js was rejected because it imposes its own User/Account/Session schema that fights the per-org model. Lucia (the library) is deprecated, so "Lucia" here means this hand-rolled pattern.
+- The auth service is the pre-auth tenant-entry boundary: it may use `basePrisma` (no `Ctx`/`orgId` exists until a session resolves), like the job runner and `invites.consumeInvite`. Every post-login query uses `orgDb(session.orgId)`.
 - Session carries `userId`, `orgId`, `role`. `orgId` comes from the session only, never from a request parameter or body.
 - Roles: `OWNER` (billing, delete org, all manager rights), `MANAGER` (create, assign, cancel, view all), `MEMBER` (see and update own tasks only).
 - Rate limit the webhook endpoint and validate Telegram's secret token header on every request.

@@ -97,6 +97,7 @@ model Organization {
   taskUpdates        TaskUpdate[]
   recurringTemplates RecurringTemplate[]
   jobs               Job[]
+  sessions           Session[]
 
   @@map("organizations")
 }
@@ -116,6 +117,11 @@ model User {
   telegramLinkedAt DateTime?
   role             Role       @default(MEMBER)
   status           UserStatus @default(INVITED)
+  // Manager auth (§11). Employees never authenticate — these stay null for them.
+  // email is globally unique so a login (email + password, no org context) resolves to one account.
+  email            String?    @unique
+  passwordHash     String?
+  lastLoginAt      DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
@@ -126,6 +132,7 @@ model User {
   taskUpdates        TaskUpdate[]        @relation("TaskUpdateActor")
   recurringTemplates RecurringTemplate[] @relation("TemplateAssignee")
   consumedInvite     Invite?             @relation("InviteConsumer")
+  sessions           Session[]
 
   // Per-org uniqueness, not global: one person may later serve two companies (§4.3).
   @@unique([orgId, telegramUserId])
@@ -133,6 +140,28 @@ model User {
   @@index([orgId, status])
   @@index([telegramUserId])
   @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Session — manager web sessions (§11). Hand-rolled (no Auth.js): `id` is the
+// SHA-256 hash of the opaque cookie token, so a DB leak never exposes live tokens.
+// Employees never authenticate — Telegram identity is their credential.
+// ---------------------------------------------------------------------------
+
+model Session {
+  id        String   @id // sha-256 hash of the cookie token (set explicitly, never a cuid)
+  orgId     String
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orgId])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 // ---------------------------------------------------------------------------

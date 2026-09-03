@@ -87,6 +87,19 @@ npm run bot:dev   # local only: bot via long polling
 - Destructive changes take two deploys: add + backfill first, drop the old column later.
 - Production migrations run in CI via `prisma migrate deploy`, never from a laptop.
 
+### Neon branch policy
+
+- The **default/production branch** (`main`) is sacred: it only ever receives
+  `prisma migrate deploy`. **Never run `prisma migrate dev` or `prisma db push` against
+  it.**
+- All schema iteration happens on a **Neon `dev` branch**. Local `.env`
+  (`DATABASE_URL` pooled + `DIRECT_URL` unpooled) points at the `dev` branch, never at
+  `main`.
+- Rapid schema exploration uses `prisma db push` against the `dev` branch (no migration
+  files). Once the schema is settled, reset the `dev` branch, run
+  `prisma migrate dev --name <name>` **once** to author the migration, then apply it to
+  `main` with `migrate deploy`.
+
 ## Architecture guardrails (enforced by convention + review)
 
 - `app/` and `telegram/` may import from `server/services`; services never import from
