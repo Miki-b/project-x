@@ -1,34 +1,63 @@
 {
-  "common": {
-    "yes": "Yes",
-    "no": "No",
-    "cancel": "Cancel"
+  "auth": {
+    "heading": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "sign_in": "Sign in",
+    "invalid": "Invalid email or password."
   },
   "dashboard": {
     "title": "Dashboard",
-    "placeholder": "The manager dashboard is built during feature work."
+    "invite_heading": "Invite your team",
+    "invite_help": "Share this link in your company's Telegram group. Anyone who taps it joins your team — they just tap Start and type their name.",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "no_username": "Set TELEGRAM_BOT_USERNAME to show the invite link. Invite token: {{token}}",
+    "team_heading": "Team",
+    "empty_team": "No one has joined yet.",
+    "logout": "Sign out"
+  },
+  "team": {
+    "status": {
+      "INVITED": "Invited",
+      "ACTIVE": "Active",
+      "DISABLED": "Disabled"
+    }
+  },
+  "role": {
+    "OWNER": "Owner",
+    "MANAGER": "Manager",
+    "MEMBER": "Member"
   },
   "bot": {
-    "welcome": "Welcome to {{company}}!",
-    "ask_name": "What is your name?",
-    "joined": "You have joined {{company}}. You will receive your tasks here.",
-    "help": "Commands: /today, /mytasks, /language, /help",
-    "no_tasks_today": "You have no tasks due today.",
-    "language_changed": "Language updated.",
-    "ask_blocker_reason": "What is blocking this task?"
+    "start": {
+      "welcome_ask_name": "👋 Welcome to {{company}} on Telegram! This is where your manager sends your work tasks. You don't need to install anything or set anything up — when a task arrives, just tap a button on it. To finish joining, what's your name?",
+      "joined": "✅ Thanks, {{name}}! You're all set. Your tasks will appear here — there's nothing else to do for now, just wait for your first one.",
+      "already_joined": "You're already set up, {{name}}. Type /today to see today's tasks."
+    },
+    "error": {
+      "invite_invalid": "This invite link isn't valid. Please ask your manager for a new one.",
+      "invite_expired": "This invite link has expired. Please ask your manager for a new one.",
+      "no_token": "To join, tap the invite link your manager shared in your group.",
+      "unknown_user": "I don't know you yet. Tap your company's invite link to join.",
+      "generic": "Something went wrong. Please try again in a moment."
+    },
+    "hint": {
+      "use_buttons": "To update a task, tap its buttons. Type /help to see what I can do."
+    }
   },
   "task": {
     "status": {
-      "PENDING": "Pending",
+      "PENDING": "Not started",
       "IN_PROGRESS": "In progress",
       "DONE": "Done",
-      "BLOCKED": "Blocked",
+      "BLOCKED": "Stuck",
       "CANCELLED": "Cancelled"
     },
     "button": {
-      "started": "Started",
-      "done": "Done",
-      "blocked": "Blocked"
+      "started": "▶️ Started",
+      "done": "✅ Done",
+      "blocked": "⛔ I'm stuck"
     }
   }
 }

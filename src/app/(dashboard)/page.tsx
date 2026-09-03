@@ -1,18 +1,66 @@
+import { getCurrentCtx } from "@/server/auth/session";
+import { createOrgInvite } from "@/server/services/invites";
+import { listMembers } from "@/server/services/users";
 import { t } from "@/lib/i18n";
-import type { Locale } from "@/types";
+import { LoginForm } from "./LoginForm";
+import { CopyLink } from "./CopyLink";
+import { logoutAction } from "./actions";
 
-// Placeholder dashboard. Real pages are built during feature work.
-// User-facing strings go through i18n even here (docs/product.md §8). Locale will come
-// from the manager's session; default to English until auth is wired.
-const DEFAULT_LOCALE: Locale = "en";
+// The manager dashboard. Unauthenticated → login. Authenticated → the org-wide invite link
+// and the team list (join flow only; task views come later).
+export default async function DashboardPage() {
+  const ctx = await getCurrentCtx();
+  if (!ctx) return <LoginForm />;
 
-export default function DashboardPage() {
+  const [invite, members] = await Promise.all([createOrgInvite(ctx), listMembers(ctx)]);
+  const username = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
+  const inviteUrl = username ? `https://t.me/${username}?start=${invite.token}` : null;
+
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <h1 className="text-2xl font-semibold">{t(DEFAULT_LOCALE, "dashboard.title")}</h1>
-      <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-        {t(DEFAULT_LOCALE, "dashboard.placeholder")}
-      </p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">{t(ctx.locale, "dashboard.title")}</h1>
+        <form action={logoutAction}>
+          <button type="submit" className="text-sm text-zinc-600 underline dark:text-zinc-400">
+            {t(ctx.locale, "dashboard.logout")}
+          </button>
+        </form>
+      </div>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-medium">{t(ctx.locale, "dashboard.invite_heading")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          {t(ctx.locale, "dashboard.invite_help")}
+        </p>
+        {inviteUrl ? (
+          <CopyLink url={inviteUrl} locale={ctx.locale} />
+        ) : (
+          <p className="mt-3 text-sm text-amber-700 dark:text-amber-500">
+            {t(ctx.locale, "dashboard.no_username", { token: invite.token })}
+          </p>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-medium">{t(ctx.locale, "dashboard.team_heading")}</h2>
+        {members.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            {t(ctx.locale, "dashboard.empty_team")}
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+            {members.map((m) => (
+              <li key={m.id} className="flex items-center justify-between py-2">
+                <span>{m.name.trim() === "" ? "—" : m.name}</span>
+                <span className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
+                  <span>{t(ctx.locale, `role.${m.role}`)}</span>
+                  <span>{t(ctx.locale, `team.status.${m.status}`)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import type { Ctx } from "@/types";
-import { validateSession } from "@/server/services/auth";
+import { validateSession, invalidateSession } from "@/server/services/auth";
 
 /**
  * Web session adapter (§11). Bridges the httpOnly cookie (transport) to the transport-free
@@ -26,6 +26,14 @@ export async function setSessionCookie(token: string, expiresAt: Date): Promise<
 
 export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
+  store.delete(COOKIE_NAME);
+}
+
+/** Log out: invalidate the current session (if any) and clear the cookie. */
+export async function signOut(): Promise<void> {
+  const store = await cookies();
+  const token = store.get(COOKIE_NAME)?.value;
+  if (token) await invalidateSession(token);
   store.delete(COOKIE_NAME);
 }
 

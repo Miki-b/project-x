@@ -28,3 +28,15 @@ export class InvalidTransition extends DomainError {
     super(`Invalid task transition: ${from} -> ${to}`);
   }
 }
+
+export class InviteInvalid extends DomainError {
+  constructor() {
+    super("Invite is not valid");
+  }
+}
+
+export class InviteExpired extends DomainError {
+  constructor() {
+    super("Invite has expired");
+  }
+}
