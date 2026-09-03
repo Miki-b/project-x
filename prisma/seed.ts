@@ -1,12 +1,12 @@
 import "dotenv/config";
+import { randomBytes } from "node:crypto";
 import { Role, UserStatus, TaskStatus, TaskSource } from "../src/generated/prisma/client";
 // Seeds reuse the single Prisma client constructed in src/server/db (docs/architecture.md §3).
 import { basePrisma as prisma } from "../src/server/db/client";
 import { hashPassword } from "../src/lib/password";
 
-// Dev-only manager credentials so the dashboard is immediately loggable-in after seeding.
+// Dev-only manager email; the password comes from SEED_PASSWORD, or a random one printed once.
 const OWNER_EMAIL = "owner@acme.test";
-const OWNER_PASSWORD = "password123";
 
 /**
  * Seed one organisation, one owner, two members, and a few tasks in different statuses
@@ -14,6 +14,12 @@ const OWNER_PASSWORD = "password123";
  * re-run against a fresh/branch database; not meant for production.
  */
 async function main(): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run seed with NODE_ENV=production");
+  }
+  const ownerPassword = process.env.SEED_PASSWORD ?? randomBytes(12).toString("base64url");
+  const generatedPassword = !process.env.SEED_PASSWORD;
+
   const org = await prisma.organization.create({
     data: { name: "Acme Trading PLC" },
   });
@@ -25,7 +31,7 @@ async function main(): Promise<void> {
       role: Role.OWNER,
       status: UserStatus.ACTIVE,
       email: OWNER_EMAIL,
-      passwordHash: await hashPassword(OWNER_PASSWORD),
+      passwordHash: await hashPassword(ownerPassword),
     },
   });
 
@@ -77,7 +83,10 @@ async function main(): Promise<void> {
   });
 
   console.log(`Seeded org ${org.id}: 1 owner, 2 members, 4 tasks.`);
-  console.log(`Manager login (dev): ${OWNER_EMAIL} / ${OWNER_PASSWORD}`);
+  console.log(`Manager login: ${OWNER_EMAIL} / ${ownerPassword}`);
+  if (generatedPassword) {
+    console.log("(password randomly generated — set SEED_PASSWORD to choose your own)");
+  }
 }
 
 main()
