@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { t } from "@/lib/i18n";
 
 // Bootstrap: read Telegram initData on the client, POST it to exchange for a session cookie,
@@ -20,7 +19,6 @@ declare global {
 }
 
 export function MiniAppAuth() {
-  const router = useRouter();
   const [state, setState] = useState<State>("loading");
 
   useEffect(() => {
@@ -44,21 +42,30 @@ export function MiniAppAuth() {
         if (!cancelled) setState("no_telegram");
         return;
       }
-      const res = await fetch("/api/miniapp/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData }),
-      });
-      if (cancelled) return;
-      if (res.ok) router.refresh();
-      else setState("failed");
+      try {
+        const res = await fetch("/api/miniapp/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData }),
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          // Hard reload so the cookie is definitely sent on the next request.
+          // router.refresh() is unreliable in Telegram's webview.
+          window.location.reload();
+        } else {
+          setState("failed");
+        }
+      } catch {
+        if (!cancelled) setState("failed");
+      }
     };
 
     void attempt();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   const message =
     state === "no_telegram"

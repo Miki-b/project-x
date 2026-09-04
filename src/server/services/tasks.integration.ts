@@ -1,7 +1,8 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { basePrisma } from "@/server/db/client";
+import { basePrisma, orgDb } from "@/server/db/client";
 import { createTask, changeStatus } from "@/server/services/tasks";
+import { handleTaskNotification } from "@/server/jobs/handlers/taskNotification";
 import { InvalidTransition, NotAuthorised, ReasonRequired, type Ctx } from "@/types";
 
 /**
@@ -46,7 +47,21 @@ async function newTask(): Promise<string> {
   return task.id;
 }
 
-test("createTask with a deadline enqueues a TASK_REMINDER", async () => {
+test("createTask enqueues TASK_NOTIFICATION (isNew=true) for the assignee", async () => {
+  const task = await createTask(ctx(orgId, managerId, "OWNER"), {
+    title: "Notify on create",
+    assigneeId: memberAId,
+  });
+  const job = await basePrisma.job.findFirst({
+    where: { orgId, type: "TASK_NOTIFICATION" },
+    orderBy: { createdAt: "desc" },
+  });
+  assert.ok(job, "TASK_NOTIFICATION job should exist");
+  assert.equal((job?.payload as { taskId?: string }).taskId, task.id);
+  assert.equal((job?.payload as { isNew?: boolean }).isNew, true);
+});
+
+test("createTask with a deadline also enqueues a TASK_REMINDER", async () => {
   const task = await createTask(ctx(orgId, managerId, "OWNER"), {
     title: "With deadline",
     assigneeId: memberAId,
@@ -150,4 +165,28 @@ test("an illegal transition is rejected", async () => {
     () => changeStatus(ctx(orgId, managerId, "OWNER"), t2, "IN_PROGRESS"),
     InvalidTransition,
   );
+});
+
+// ---------------------------------------------------------------------------
+// TASK_NOTIFICATION handler
+// ---------------------------------------------------------------------------
+
+test("TASK_NOTIFICATION handler: assignee with no telegramChatId does not throw", async () => {
+  // memberAId has no telegramChatId in test setup (created without one)
+  const task = await createTask(ctx(orgId, managerId, "OWNER"), {
+    title: "No-chatId task",
+    assigneeId: memberAId,
+  });
+
+  const notifyJob = await basePrisma.job.findFirst({
+    where: { orgId, type: "TASK_NOTIFICATION", payload: { path: ["taskId"], equals: task.id } },
+    orderBy: { createdAt: "desc" },
+  });
+  assert.ok(notifyJob, "TASK_NOTIFICATION job should exist");
+
+  const { payload, ...meta } = notifyJob;
+  const db = orgDb(orgId);
+
+  // Should return without throwing (assignee has no telegramChatId → early return)
+  await assert.doesNotReject(() => handleTaskNotification(db, payload, meta));
 });

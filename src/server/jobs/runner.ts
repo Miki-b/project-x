@@ -69,7 +69,14 @@ async function runJob(job: Job): Promise<void> {
         lastError: err instanceof Error ? err.message : String(err),
       },
     });
-    logger.warn("job failed", { jobId: job.id, orgId: job.orgId, type: job.type, attempts, failed });
+    logger.warn("job failed", {
+      jobId: job.id,
+      orgId: job.orgId,
+      type: job.type,
+      attempts,
+      failed,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 

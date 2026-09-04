@@ -12,7 +12,7 @@
     "lint": "eslint",
     "worker": "tsx worker/index.ts",
     "bot:dev": "tsx src/server/telegram/dev.ts",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate dev && prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",

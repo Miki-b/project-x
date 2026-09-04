@@ -15,7 +15,22 @@
     "no_username": "Set TELEGRAM_BOT_USERNAME to show the invite link. Invite token: {{token}}",
     "team_heading": "Team",
     "empty_team": "No one has joined yet.",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "tasks_heading": "Tasks",
+    "create_task_heading": "Create a task",
+    "task_title": "Title",
+    "task_description": "Description (optional)",
+    "task_assignee": "Assign to",
+    "task_due": "Due date (optional)",
+    "task_submit": "Create task",
+    "task_created": "Task created.",
+    "task_error_required": "Title and assignee are required.",
+    "task_board_empty": "No tasks yet. Create the first one above.",
+    "task_history": "History",
+    "task_no_assignee_option": "— Select —",
+    "task_detail_heading": "Task detail",
+    "task_view": "View",
+    "back": "← Back"
   },
   "team": {
     "status": {

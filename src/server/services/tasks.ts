@@ -65,6 +65,16 @@ export async function createTask(ctx: Ctx, input: CreateTaskInput): Promise<Task
       },
     });
 
+    // Notify the assignee immediately via Telegram (flow b, docs/bot_flows.md §3).
+    await tx.job.create({
+      data: {
+        orgId: ctx.orgId,
+        type: "TASK_NOTIFICATION",
+        runAt: new Date(),
+        payload: { taskId: task.id, isNew: true } satisfies Prisma.InputJsonObject,
+      },
+    });
+
     if (input.dueAt) {
       const runAt = new Date(Math.max(Date.now(), input.dueAt.getTime() - REMINDER_LEAD_MS));
       await tx.job.create({
@@ -200,6 +210,19 @@ export type TaskWithHistory = Prisma.TaskGetPayload<{
     updates: { include: { actor: true } };
   };
 }>;
+
+export type TaskWithAssignee = Prisma.TaskGetPayload<{
+  include: { assignee: true };
+}>;
+
+/** All tasks in the org for the manager board — flat, sorted by due date (no-due last). */
+export async function listOrgTasks(ctx: Ctx): Promise<TaskWithAssignee[]> {
+  if (!isManager(ctx)) throw new NotAuthorised();
+  return orgDb(ctx.orgId).task.findMany({
+    include: { assignee: true },
+    orderBy: [{ dueAt: "asc" }],
+  });
+}
 
 /** A single task with its full update history. Members may only view their own. */
 export async function getTask(ctx: Ctx, taskId: string): Promise<TaskWithHistory> {

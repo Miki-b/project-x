@@ -39,6 +39,11 @@ yarn-error.log*
 # Prisma 7 generated client — regenerated on install via the postinstall script.
 /src/generated
 
+# local dev tunnel (cloudflared) + throwaway debug scripts
+cloudflared.exe
+cloudflared.log
+check-jobs.mjs
+
 # vercel
 .vercel
 

@@ -14,9 +14,11 @@ export function taskKeyboard(
   locale: Locale,
   appUrl: string,
 ): InlineKeyboard {
-  const kb = new InlineKeyboard()
-    .webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`)
-    .row();
+  const kb = new InlineKeyboard();
+  // Web App button requires a valid https URL; skip gracefully if NEXT_PUBLIC_APP_URL is unset.
+  if (appUrl) {
+    kb.webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`).row();
+  }
 
   const started = () => kb.text(t(locale, "task.button.started"), `t:start:${taskId}`);
   const done = () => kb.text(t(locale, "task.button.done"), `t:done:${taskId}`);
@@ -43,10 +45,11 @@ export function taskKeyboard(
   return kb;
 }
 
-/** Keyboard while awaiting a blocker reason (flow c): only Cancel (+ Open Tasks). */
+/** Keyboard while awaiting a blocker reason (flow c): only Cancel (+ Open Tasks if configured). */
 export function reasonKeyboard(taskId: string, locale: Locale, appUrl: string): InlineKeyboard {
-  return new InlineKeyboard()
-    .webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`)
-    .row()
-    .text(t(locale, "bot.button.cancel"), `t:cancelblock:${taskId}`);
+  const kb = new InlineKeyboard();
+  if (appUrl) {
+    kb.webApp(t(locale, "bot.button.open_tasks"), `${appUrl}/miniapp`).row();
+  }
+  return kb.text(t(locale, "bot.button.cancel"), `t:cancelblock:${taskId}`);
 }

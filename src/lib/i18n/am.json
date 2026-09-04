@@ -15,7 +15,22 @@
     "no_username": "ማስፈንጠሪያውን ለማሳየት TELEGRAM_BOT_USERNAME ያዘጋጁ። የመጋበዣ ቶከን፦ {{token}}",
     "team_heading": "ቡድን",
     "empty_team": "እስካሁን ማንም አልተቀላቀለም።",
-    "logout": "ውጣ"
+    "logout": "ውጣ",
+    "tasks_heading": "ተግባሮች",
+    "create_task_heading": "ተግባር ይፍጠሩ",
+    "task_title": "ርዕስ",
+    "task_description": "መግለጫ (አማራጭ)",
+    "task_assignee": "ለማን ይሰጡ",
+    "task_due": "የማጠናቀቂያ ቀን (አማራጭ)",
+    "task_submit": "ተግባር ፍጠር",
+    "task_created": "ተግባሩ ተፈጥሯል።",
+    "task_error_required": "ርዕስ እና ተቀባይ ያስፈልጋሉ።",
+    "task_board_empty": "እስካሁን ምንም ተግባር የለም። ከላይ የመጀመሪያውን ይፍጠሩ።",
+    "task_history": "ታሪክ",
+    "task_no_assignee_option": "— ይምረጡ —",
+    "task_detail_heading": "የተግባር ዝርዝር",
+    "task_view": "ይመልከቱ",
+    "back": "← ተመለስ"
   },
   "team": {
     "status": {

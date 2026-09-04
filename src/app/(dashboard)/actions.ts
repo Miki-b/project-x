@@ -3,10 +3,11 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { login } from "@/server/services/auth";
-import { setSessionCookie, signOut } from "@/server/auth/session";
+import { createTask } from "@/server/services/tasks";
+import { setSessionCookie, signOut, getCurrentCtx } from "@/server/auth/session";
 import { NotAuthorised } from "@/types";
 import { t } from "@/lib/i18n";
-import type { LoginState } from "./types";
+import type { LoginState, TaskFormState } from "./types";
 
 // Minimal manager login so the dashboard is reachable (docs/architecture.md §11).
 // The session mechanism (auth service + cookie adapter) already exists; this only wires it.
@@ -35,5 +36,44 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
 export async function logoutAction(): Promise<void> {
   await signOut();
+  redirect("/");
+}
+
+const CreateTaskSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  assigneeId: z.string().min(1),
+  dueAt: z.string().optional(),
+});
+
+export async function createTaskAction(
+  _prev: TaskFormState,
+  formData: FormData,
+): Promise<TaskFormState> {
+  const ctx = await getCurrentCtx();
+  if (!ctx) return { error: t("en", "auth.invalid") };
+
+  const parsed = CreateTaskSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    assigneeId: formData.get("assigneeId"),
+    dueAt: formData.get("dueAt") || undefined,
+  });
+  if (!parsed.success) return { error: t(ctx.locale, "dashboard.task_error_required") };
+
+  const { title, description, assigneeId, dueAt } = parsed.data;
+
+  try {
+    await createTask(ctx, {
+      title,
+      description,
+      assigneeId,
+      dueAt: dueAt ? new Date(dueAt) : undefined,
+    });
+  } catch (err) {
+    if (err instanceof NotAuthorised) return { error: t(ctx.locale, "dashboard.task_error_required") };
+    throw err;
+  }
+
   redirect("/");
 }
