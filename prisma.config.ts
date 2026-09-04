@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 /**
  * Prisma 7 configuration (docs/architecture.md §6). Replaces the old package.json
@@ -19,6 +19,12 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: env("DIRECT_URL"),
+    // The Prisma CLI (migrate/studio) connects with the UNPOOLED DIRECT_URL. `prisma generate`
+    // and the app runtime do NOT connect through this datasource, so we read the var directly
+    // rather than via Prisma's env() helper — env() throws when the variable is absent, which
+    // breaks `prisma generate` in build images (Docker, Vercel) that only carry DATABASE_URL.
+    // The DATABASE_URL fallback only gives tooling a valid URL shape; real migrations must set
+    // DIRECT_URL (migrating through Neon's pooler fails).
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
   },
 });
