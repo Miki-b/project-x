@@ -105,6 +105,11 @@
       "done": "ተጠናቋል ✓",
       "blocked": "ምን እንዳገዳዎት ንገሩኝ",
       "cancelled": "ተሰርዟል"
+    },
+    "summary": {
+      "header": "🌇 {{company}} — {{date}}",
+      "fallback": "🌇 {{company}} — {{date}}\n✅ ተጠናቋል፦ {{done}}\n⏳ ጊዜው አልፎ፦ {{slipped}}\n⛔ ተስተጓጉሏል፦ {{blocked}}",
+      "none": "ዛሬ የሚነገር እንቅስቃሴ የለም።"
     }
   },
   "task": {

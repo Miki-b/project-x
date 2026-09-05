@@ -105,6 +105,11 @@
       "done": "Marked as done ✓",
       "blocked": "Tell me what's stopping you",
       "cancelled": "Cancelled"
+    },
+    "summary": {
+      "header": "🌇 {{company}} — {{date}}",
+      "fallback": "🌇 {{company}} — {{date}}\n✅ Done: {{done}}\n⏳ Past due: {{slipped}}\n⛔ Stuck: {{blocked}}",
+      "none": "No activity to report today."
     }
   },
   "task": {

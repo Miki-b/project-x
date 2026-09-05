@@ -1,8 +1,9 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { basePrisma } from "@/server/db/client";
+import { basePrisma, orgDb } from "@/server/db/client";
 import { createTask, changeStatus } from "@/server/services/tasks";
 import { sendTaskCardToAssignee } from "@/server/telegram/deliver";
+import { handleDailySummary } from "@/server/jobs/handlers/dailySummary";
 import { InvalidTransition, NotAuthorised, ReasonRequired, type Ctx } from "@/types";
 
 /**
@@ -173,4 +174,27 @@ test("sendTaskCardToAssignee: assignee with no telegramChatId returns without th
   });
 
   await assert.doesNotReject(() => sendTaskCardToAssignee(orgId, task.id, true));
+});
+
+// ---------------------------------------------------------------------------
+// DAILY_SUMMARY handler
+// ---------------------------------------------------------------------------
+
+test("handleDailySummary: no managers on Telegram returns without throwing", async () => {
+  // The test org's OWNER has no telegramChatId, so the handler should early-return (no send)
+  // regardless of the task counts.
+  await createTask(ctx(orgId, managerId, "OWNER"), { title: "Summary task", assigneeId: memberAId });
+
+  const jobRow = await basePrisma.job.create({
+    data: {
+      orgId,
+      type: "DAILY_SUMMARY",
+      runAt: new Date(),
+      dedupeKey: `summary:${orgId}:test-${Date.now()}`,
+      payload: { date: "2026-09-05" },
+    },
+  });
+  const { payload, ...meta } = jobRow;
+
+  await assert.doesNotReject(() => handleDailySummary(orgDb(orgId), payload, meta));
 });

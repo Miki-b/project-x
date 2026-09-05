@@ -5,6 +5,7 @@ import type { Job } from "@/generated/prisma/client";
 import { basePrisma, orgDb } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 import { handlers } from "./handlers";
+import { enqueueDueScheduledJobs } from "./scheduler";
 
 const POLL_INTERVAL_MS = 30_000; // poll every 30s (docs/architecture.md §8)
 const CLAIM_BATCH = 20;
@@ -80,8 +81,18 @@ async function runJob(job: Job): Promise<void> {
   }
 }
 
-/** One poll iteration: reclaim stale locks, claim due jobs, dispatch each. */
+/** One poll iteration: enqueue due recurring jobs, reclaim stale locks, claim due jobs, dispatch. */
 export async function tick(): Promise<void> {
+  // Enqueue time-of-day jobs (e.g. DAILY_SUMMARY) that have come due. A failure here must not
+  // stop job processing, so it is isolated from the claim/dispatch below.
+  try {
+    await enqueueDueScheduledJobs();
+  } catch (err) {
+    logger.error("scheduler tick failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   const reclaimed = await reclaimStaleJobs();
   if (reclaimed > 0) logger.info("reclaimed stale jobs", { count: reclaimed });
 
