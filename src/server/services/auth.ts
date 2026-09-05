@@ -7,6 +7,7 @@ import { basePrisma } from "@/server/db/client";
 import { verifyPassword } from "@/lib/password";
 import { generateSessionToken, hashSessionToken } from "@/lib/session-token";
 import { verifyInitData } from "@/server/auth/telegram-init-data";
+import { verifyTelegramLogin } from "@/server/auth/telegram-login";
 import { NotAuthorised } from "@/types";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -64,6 +65,26 @@ export async function authenticateMiniApp(
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not set");
 
   const { telegramUserId } = verifyInitData(initData, token); // throws on tamper / staleness
+  const user = await basePrisma.user.findFirst({ where: { telegramUserId } });
+  if (!user || user.status !== "ACTIVE") throw new NotAuthorised();
+
+  const created = await createSession(user.id, user.orgId);
+  return { token: created.token, session: created.session, user };
+}
+
+/**
+ * Authenticate an employee from a Telegram Login Widget callback (docs/architecture.md §11).
+ * Browser (desktop) counterpart to `authenticateMiniApp`: verifies the widget hash + freshness,
+ * resolves the user by `telegramUserId`, and issues the same session. `orgId` always comes from
+ * the matched users row — never from the callback params.
+ */
+export async function authenticateEmployeeLogin(
+  params: Record<string, string | undefined>,
+): Promise<AuthenticatedSession> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not set");
+
+  const { telegramUserId } = verifyTelegramLogin(params, token); // throws on tamper / staleness
   const user = await basePrisma.user.findFirst({ where: { telegramUserId } });
   if (!user || user.status !== "ACTIVE") throw new NotAuthorised();
 

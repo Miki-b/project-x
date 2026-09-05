@@ -74,6 +74,13 @@
       "REMINDER_SENT": "Reminder sent"
     }
   },
+  "employee": {
+    "login_heading": "Sign in",
+    "login_hint": "Sign in with your Telegram account to see and manage your tasks.",
+    "login_error": "Sign-in failed. Please try again.",
+    "login_unconfigured": "Sign-in isn't configured yet. Please contact your manager.",
+    "sign_out": "Sign out"
+  },
   "bot": {
     "start": {
       "welcome_ask_name": "👋 Welcome to {{company}} on Telegram! This is where your manager sends your work tasks. You don't need to install anything or set anything up — when a task arrives, just tap a button on it. To finish joining, what's your name?",
