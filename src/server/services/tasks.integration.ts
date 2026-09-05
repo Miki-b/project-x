@@ -1,8 +1,8 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { basePrisma, orgDb } from "@/server/db/client";
+import { basePrisma } from "@/server/db/client";
 import { createTask, changeStatus } from "@/server/services/tasks";
-import { handleTaskNotification } from "@/server/jobs/handlers/taskNotification";
+import { sendTaskCardToAssignee } from "@/server/telegram/deliver";
 import { InvalidTransition, NotAuthorised, ReasonRequired, type Ctx } from "@/types";
 
 /**
@@ -47,8 +47,8 @@ async function newTask(): Promise<string> {
   return task.id;
 }
 
-test("createTask enqueues TASK_NOTIFICATION (isNew=true) for the assignee", async () => {
-  const task = await createTask(ctx(orgId, managerId, "OWNER"), {
+test("createTask does NOT enqueue a TASK_NOTIFICATION job (card is delivered inline)", async () => {
+  await createTask(ctx(orgId, managerId, "OWNER"), {
     title: "Notify on create",
     assigneeId: memberAId,
   });
@@ -56,9 +56,7 @@ test("createTask enqueues TASK_NOTIFICATION (isNew=true) for the assignee", asyn
     where: { orgId, type: "TASK_NOTIFICATION" },
     orderBy: { createdAt: "desc" },
   });
-  assert.ok(job, "TASK_NOTIFICATION job should exist");
-  assert.equal((job?.payload as { taskId?: string }).taskId, task.id);
-  assert.equal((job?.payload as { isNew?: boolean }).isNew, true);
+  assert.equal(job, null, "no TASK_NOTIFICATION job should be enqueued");
 });
 
 test("createTask with a deadline also enqueues a TASK_REMINDER", async () => {
@@ -71,7 +69,7 @@ test("createTask with a deadline also enqueues a TASK_REMINDER", async () => {
   assert.ok(jobs.some((j) => (j.payload as { taskId?: string }).taskId === task.id));
 });
 
-test("changeStatus writes tasks + task_updates + jobs in one transaction", async () => {
+test("changeStatus writes tasks + task_updates in one transaction (no notification job)", async () => {
   const taskId = await newTask();
   const before = await basePrisma.job.count({ where: { orgId } });
 
@@ -87,14 +85,9 @@ test("changeStatus writes tasks + task_updates + jobs in one transaction", async
   assert.equal(update?.fromStatus, "PENDING");
   assert.equal(update?.toStatus, "IN_PROGRESS");
 
+  // The bot edits the card in place on a status change, so no notification job is enqueued.
   const after = await basePrisma.job.count({ where: { orgId } });
-  assert.equal(after, before + 1); // exactly one notification job
-
-  const notify = await basePrisma.job.findFirst({
-    where: { orgId, type: "TASK_NOTIFICATION" },
-    orderBy: { createdAt: "desc" },
-  });
-  assert.equal((notify?.payload as { taskId?: string }).taskId, taskId);
+  assert.equal(after, before);
 });
 
 test("a member cannot change another member's task", async () => {
@@ -168,25 +161,16 @@ test("an illegal transition is rejected", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// TASK_NOTIFICATION handler
+// Inline task card delivery
 // ---------------------------------------------------------------------------
 
-test("TASK_NOTIFICATION handler: assignee with no telegramChatId does not throw", async () => {
-  // memberAId has no telegramChatId in test setup (created without one)
+test("sendTaskCardToAssignee: assignee with no telegramChatId returns without throwing", async () => {
+  // memberAId has no telegramChatId in test setup → the sender should early-return before it
+  // ever needs a bot token or makes a Telegram call.
   const task = await createTask(ctx(orgId, managerId, "OWNER"), {
     title: "No-chatId task",
     assigneeId: memberAId,
   });
 
-  const notifyJob = await basePrisma.job.findFirst({
-    where: { orgId, type: "TASK_NOTIFICATION", payload: { path: ["taskId"], equals: task.id } },
-    orderBy: { createdAt: "desc" },
-  });
-  assert.ok(notifyJob, "TASK_NOTIFICATION job should exist");
-
-  const { payload, ...meta } = notifyJob;
-  const db = orgDb(orgId);
-
-  // Should return without throwing (assignee has no telegramChatId → early return)
-  await assert.doesNotReject(() => handleTaskNotification(db, payload, meta));
+  await assert.doesNotReject(() => sendTaskCardToAssignee(orgId, task.id, true));
 });

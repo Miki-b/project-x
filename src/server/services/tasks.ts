@@ -65,15 +65,9 @@ export async function createTask(ctx: Ctx, input: CreateTaskInput): Promise<Task
       },
     });
 
-    // Notify the assignee immediately via Telegram (flow b, docs/bot_flows.md §3).
-    await tx.job.create({
-      data: {
-        orgId: ctx.orgId,
-        type: "TASK_NOTIFICATION",
-        runAt: new Date(),
-        payload: { taskId: task.id, isNew: true } satisfies Prisma.InputJsonObject,
-      },
-    });
+    // The assignee's Telegram card is delivered inline by the caller after this transaction
+    // commits (src/app/(dashboard)/actions.ts -> sendTaskCardToAssignee); there is no
+    // always-on worker, so we do not enqueue a TASK_NOTIFICATION job here.
 
     if (input.dueAt) {
       const runAt = new Date(Math.max(Date.now(), input.dueAt.getTime() - REMINDER_LEAD_MS));
@@ -142,20 +136,9 @@ export async function changeStatus(
       },
     });
 
-    // Outbound notification enqueued in the same transaction (§7). The handler edits/sends
-    // the assignee's bot card to reflect the new status.
-    await tx.job.create({
-      data: {
-        orgId: ctx.orgId,
-        type: "TASK_NOTIFICATION",
-        runAt: new Date(),
-        payload: {
-          taskId,
-          fromStatus: task.status,
-          toStatus: to,
-        } satisfies Prisma.InputJsonObject,
-      },
-    });
+    // No notification job: bot-initiated status changes edit the card in place
+    // (handlers/callbacks.ts). A future manager-web status change would deliver inline via
+    // sendTaskCardToAssignee, mirroring task creation.
 
     return updated;
   });

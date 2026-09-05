@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { login } from "@/server/services/auth";
 import { createTask } from "@/server/services/tasks";
+import { sendTaskCardToAssignee } from "@/server/telegram/deliver";
 import { setSessionCookie, signOut, getCurrentCtx } from "@/server/auth/session";
 import { NotAuthorised } from "@/types";
+import { logger } from "@/lib/logger";
 import { t } from "@/lib/i18n";
 import type { LoginState, TaskFormState } from "./types";
 
@@ -63,16 +65,30 @@ export async function createTaskAction(
 
   const { title, description, assigneeId, dueAt } = parsed.data;
 
+  let taskId: string;
   try {
-    await createTask(ctx, {
+    const task = await createTask(ctx, {
       title,
       description,
       assigneeId,
       dueAt: dueAt ? new Date(dueAt) : undefined,
     });
+    taskId = task.id;
   } catch (err) {
     if (err instanceof NotAuthorised) return { error: t(ctx.locale, "dashboard.task_error_required") };
     throw err;
+  }
+
+  // Deliver the assignee's Telegram card inline (there is no always-on worker). Best-effort:
+  // a delivery failure must not fail task creation — the task is created and shows on the
+  // board regardless, and the failure is logged for follow-up.
+  try {
+    await sendTaskCardToAssignee(ctx.orgId, taskId, true);
+  } catch (err) {
+    logger.error("inline task card delivery failed", {
+      taskId,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   redirect("/");
