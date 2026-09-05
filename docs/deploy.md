@@ -110,6 +110,15 @@ With a stable URL you can pin the Mini App: `/setmenubutton` → the bot → sen
 `https://project-x-blue-three.vercel.app` → label it (e.g. "Tasks"). Employees then get a
 persistent button that opens the Mini App.
 
+### Employee web app (`/app`) — Login Widget domain
+
+The standalone employee browser app at `/app` signs employees in with the **Telegram Login
+Widget** ([src/app/app/login](../src/app/app/login/page.tsx), verified in
+[telegram-login.ts](../src/server/auth/telegram-login.ts)). The widget only renders once the
+bot's domain is registered: in @BotFather → `/setdomain` → the bot → send
+`project-x-blue-three.vercel.app`. Until then the button shows "Bot domain invalid". Only users
+who joined via the bot (so they have a `telegramUserId`) and are `ACTIVE` can sign in.
+
 ## Scheduled jobs (cron tick)
 
 The scheduled-job processor is **live**: [src/app/api/cron/tick/route.ts](../src/app/api/cron/tick/route.ts)
