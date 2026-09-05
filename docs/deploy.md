@@ -129,8 +129,12 @@ Job status:
   `createTask` enqueues one ~1h before a due date; the tick delivers it, skipping finished tasks.
 - ✅ **`TASK_NOTIFICATION`** — handler kept (delegates to `sendTaskCardToAssignee`), but the live
   flow delivers cards inline, so it is not enqueued today.
-- ⏳ **`END_OF_DAY_NUDGE`, `DAILY_SUMMARY`, `RECURRING_GENERATE`, `AI_PARSE`** — still stubs;
-  implement the handler, enqueue the rows, and the existing tick will process them.
+- ✅ **`DAILY_SUMMARY`** — [scheduler.ts](../src/server/jobs/scheduler.ts) enqueues one per org per
+  local day after 18:00 (org timezone), idempotent via `dedupeKey`; the tick delivers the recap
+  to every OWNER/MANAGER with a linked Telegram chat. Sends the counts fallback until the AI prose
+  recap (`writeDailySummary`) is implemented. **Managers only receive it if they've linked Telegram.**
+- ⏳ **`END_OF_DAY_NUDGE`, `RECURRING_GENERATE`, `AI_PARSE`** — still stubs; implement the handler
+  (and, for time-of-day jobs, add an enqueue rule to the scheduler) and the tick will process them.
 
 > GitHub may delay scheduled runs under load, so a reminder can be a few minutes late — fine for
 > a ~1h-ahead nudge. If you ever need tighter timing, add a native Vercel Cron or an external
