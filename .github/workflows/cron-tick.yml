@@ -1,0 +1,22 @@
+# Free scheduled pinger for the job processor (docs/deploy.md).
+# GitHub Actions has no always-on server either, but its scheduled workflows are free on a
+# public repo. This hits /api/cron/tick every ~15 min so TASK_REMINDER (and future scheduled
+# jobs) fire without paying for a worker. GitHub may delay scheduled runs under load.
+name: cron-tick
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the job processor
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS --max-time 60 -X GET \
+            "https://project-x-blue-three.vercel.app/api/cron/tick" \
+            -H "Authorization: Bearer ${CRON_SECRET}"

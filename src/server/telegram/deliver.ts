@@ -1,6 +1,7 @@
 import { Api } from "grammy";
 import { basePrisma, orgDb } from "@/server/db/client";
 import { logger } from "@/lib/logger";
+import { t } from "@/lib/i18n";
 import { taskCardText } from "./messages/task";
 import { taskKeyboard } from "./keyboards";
 import type { Locale } from "@/types";
@@ -24,6 +25,7 @@ export async function sendTaskCardToAssignee(
   orgId: string,
   taskId: string,
   isNew: boolean,
+  opts?: { headerKey?: Parameters<typeof t>[1] },
 ): Promise<void> {
   const db = orgDb(orgId);
   const task = await db.task.findFirst({
@@ -57,7 +59,7 @@ export async function sendTaskCardToAssignee(
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
-  const text = taskCardText({
+  const card = taskCardText({
     title: task.title,
     status: task.status,
     dueAt: task.dueAt,
@@ -67,6 +69,8 @@ export async function sendTaskCardToAssignee(
     blockedReason,
     isNew,
   });
+  // Optional header line (e.g. the reminder banner) prepended in the assignee's locale.
+  const text = opts?.headerKey ? `${t(locale, opts.headerKey)}\n${card}` : card;
   const keyboard = taskKeyboard(task.id, task.status, locale, appUrl);
 
   const token = process.env.TELEGRAM_BOT_TOKEN;

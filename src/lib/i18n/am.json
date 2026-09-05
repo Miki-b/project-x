@@ -128,6 +128,9 @@
       "status": "▸ {{status}}",
       "blocked_reason": "⛔ ተስተጓጉሏል፦ {{reason}}",
       "done_at": "✅ ተጠናቋል {{when}}"
+    },
+    "reminder": {
+      "header": "⏰ አስታዋሽ — ጊዜው እየደረሰ ነው"
     }
   }
 }
