@@ -110,13 +110,28 @@ With a stable URL you can pin the Mini App: `/setmenubutton` → the bot → sen
 `https://project-x-blue-three.vercel.app` → label it (e.g. "Tasks"). Employees then get a
 persistent button that opens the Mini App.
 
-## Reminders & scheduled jobs
+## Scheduled jobs (cron tick)
 
-`TASK_REMINDER`, `END_OF_DAY_NUDGE`, `DAILY_SUMMARY`, `RECURRING_GENERATE`, `AI_PARSE` are still
-stubs. `createTask` enqueues `TASK_REMINDER` rows when a due date is set, but **nothing processes
-them yet**. When these are built, add a **Vercel Cron** hitting a new route (e.g.
-`/api/cron/tick`) that runs one `tick()` from [src/server/jobs/runner.ts](../src/server/jobs/runner.ts):
+The scheduled-job processor is **live**: [src/app/api/cron/tick/route.ts](../src/app/api/cron/tick/route.ts)
+runs one `tick()` from [src/server/jobs/runner.ts](../src/server/jobs/runner.ts) (reclaim stale
+locks → claim due jobs → dispatch). It is guarded by `CRON_SECRET` (sent as
+`Authorization: Bearer <CRON_SECRET>`). It is pinged every ~15 min by a free GitHub Actions
+workflow ([.github/workflows/cron-tick.yml](../.github/workflows/cron-tick.yml)) — scheduled
+runs are free on this public repo. The same route also accepts native **Vercel Cron** (which
+sends the same Bearer header), so you can switch/add that any time.
 
-- Vercel Hobby cron granularity is ~daily, which suits nudges/summaries.
-- For near-real-time needs, either upgrade the Vercel plan or reintroduce an always-on worker
-  (the removed `Dockerfile.worker` + `fly.toml` are in git history).
+Test it: `curl -H "Authorization: Bearer $CRON_SECRET" https://project-x-blue-three.vercel.app/api/cron/tick`
+→ `{"ok":true}`. Trigger the pinger manually with `gh workflow run cron-tick.yml`.
+
+Job status:
+
+- ✅ **`TASK_REMINDER`** — implemented ([handlers/taskReminder.ts](../src/server/jobs/handlers/taskReminder.ts)).
+  `createTask` enqueues one ~1h before a due date; the tick delivers it, skipping finished tasks.
+- ✅ **`TASK_NOTIFICATION`** — handler kept (delegates to `sendTaskCardToAssignee`), but the live
+  flow delivers cards inline, so it is not enqueued today.
+- ⏳ **`END_OF_DAY_NUDGE`, `DAILY_SUMMARY`, `RECURRING_GENERATE`, `AI_PARSE`** — still stubs;
+  implement the handler, enqueue the rows, and the existing tick will process them.
+
+> GitHub may delay scheduled runs under load, so a reminder can be a few minutes late — fine for
+> a ~1h-ahead nudge. If you ever need tighter timing, add a native Vercel Cron or an external
+> pinger (e.g. cron-job.org) hitting the same route more frequently.
