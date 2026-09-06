@@ -1,26 +1,276 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: toggled by adding `.dark` on <html> (see ThemeToggle + no-flash
+   script in layout.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * Design tokens. Light = deep navy on cool white. Dark = glowy violet
+ * on near-black. Every surface reads from these, so both themes stay
+ * consistent without per-utility dark: variants.
+ * ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #eef1f8;
+  --surface: #ffffff;
+  --surface-2: #f5f7fc;
+  --fg: #0d1526;
+  --muted: #5a6579;
+  --border: #e3e8f2;
+  --border-strong: #cfd7e6;
+
+  --primary: #1b2a5c;
+  --primary-2: #26408f;
+  --primary-fg: #ffffff;
+  --accent: #ffffff;
+  --ring: rgba(38, 64, 143, 0.28);
+
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.75);
+
+  --shadow-card: 0 1px 2px rgba(13, 21, 38, 0.05), 0 10px 30px -12px rgba(13, 21, 38, 0.12);
+  --shadow-card-hover: 0 2px 4px rgba(13, 21, 38, 0.06), 0 18px 40px -14px rgba(13, 21, 38, 0.22);
+  --shadow-primary: 0 6px 18px -6px rgba(27, 42, 92, 0.5);
+  --shadow-primary-hover: 0 10px 26px -6px rgba(27, 42, 92, 0.6);
+
+  --ambient: radial-gradient(60rem 40rem at 80% -10%, rgba(38, 64, 143, 0.1), transparent 60%),
+    radial-gradient(50rem 40rem at -10% 10%, rgba(38, 64, 143, 0.06), transparent 55%);
+}
+
+.dark {
+  --bg: #08070e;
+  --surface: #121120;
+  --surface-2: #17162a;
+  --fg: #e9e8f4;
+  --muted: #a09fbb;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --primary: #8b5cf6;
+  --primary-2: #a78bfa;
+  --primary-fg: #ffffff;
+  --accent: #c4b5fd;
+  --ring: rgba(139, 92, 246, 0.5);
+
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -20px rgba(0, 0, 0, 0.8);
+  --shadow-card-hover: 0 1px 2px rgba(0, 0, 0, 0.5), 0 22px 60px -20px rgba(124, 58, 237, 0.35);
+  --shadow-primary: 0 0 0 1px rgba(139, 92, 246, 0.35), 0 8px 30px -6px rgba(139, 92, 246, 0.55);
+  --shadow-primary-hover: 0 0 0 1px rgba(139, 92, 246, 0.5), 0 12px 40px -6px rgba(139, 92, 246, 0.7);
+
+  --ambient: radial-gradient(55rem 40rem at 85% -15%, rgba(139, 92, 246, 0.22), transparent 60%),
+    radial-gradient(45rem 40rem at -10% 5%, rgba(79, 70, 229, 0.16), transparent 55%),
+    radial-gradient(40rem 35rem at 50% 120%, rgba(168, 85, 247, 0.12), transparent 60%);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-2: var(--primary-2);
+  --color-primary-fg: var(--primary-fg);
+  --color-accent: var(--accent);
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+  /* Fixed ambient wash behind everything. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--ambient);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 28%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ------------------------------------------------------------------ *
+ * Reusable components.
+ * ------------------------------------------------------------------ */
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid var(--glass-border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--border-strong);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 0.55rem 1.05rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.22s ease, background-color 0.2s ease,
+      border-color 0.2s ease, opacity 0.2s ease;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: var(--primary-fg);
+    box-shadow: var(--shadow-primary);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary-hover);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+  .btn-soft {
+    background: var(--surface-2);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn-soft:hover:not(:disabled) {
+    border-color: var(--border-strong);
+  }
+
+  .input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.9rem;
+    color: var(--fg);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+  .input::placeholder {
+    color: color-mix(in srgb, var(--muted) 80%, transparent);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  .field-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .link {
+    color: var(--primary-2);
+    transition: opacity 0.2s ease;
+  }
+  .link:hover {
+    opacity: 0.8;
+  }
+
+  .divider {
+    border-color: var(--border);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Motion. Content rises in; interactive elements move on hover. All
+ * disabled under prefers-reduced-motion.
+ * ------------------------------------------------------------------ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer utilities {
+  .animate-rise {
+    animation: rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+  .rise-1 {
+    animation-delay: 0.05s;
+  }
+  .rise-2 {
+    animation-delay: 0.12s;
+  }
+  .rise-3 {
+    animation-delay: 0.2s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

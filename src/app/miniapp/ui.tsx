@@ -4,16 +4,18 @@ import { t } from "@/lib/i18n";
 import { formatInAddis } from "@/lib/time";
 
 const BADGE_COLORS: Record<TaskStatus, string> = {
-  PENDING: "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100",
-  IN_PROGRESS: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  DONE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  BLOCKED: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  CANCELLED: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500",
+  PENDING: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  IN_PROGRESS: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  DONE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  BLOCKED: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  CANCELLED: "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500",
 };
 
 export function StatusBadge({ status, locale }: { status: TaskStatus; locale: Locale }) {
   return (
-    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs ${BADGE_COLORS[status]}`}>
+    <span
+      className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE_COLORS[status]}`}
+    >
       {t(locale, `task.status.${status}`)}
     </span>
   );

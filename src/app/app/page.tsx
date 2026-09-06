@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrandMark } from "@/components/BrandMark";
 import { StatusBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
 
@@ -16,38 +18,51 @@ export default async function EmployeeHome() {
   const tasks = await listTasksForAssignee(ctx, ctx.actorId);
 
   return (
-    <main className="p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{t(ctx.locale, "miniapp.title")}</h1>
-        <form action={employeeSignOutAction}>
-          <button type="submit" className="text-sm text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200">
-            {t(ctx.locale, "employee.sign_out")}
-          </button>
-        </form>
-      </div>
+    <>
+      <header className="glass sticky top-0 z-20 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
+              <BrandMark size={18} />
+            </span>
+            <span className="font-display text-base font-semibold tracking-tight">
+              {t(ctx.locale, "miniapp.title")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <form action={employeeSignOutAction}>
+              <button type="submit" className="btn btn-ghost h-9 px-3">
+                {t(ctx.locale, "employee.sign_out")}
+              </button>
+            </form>
+          </div>
+        </div>
+      </header>
 
-      {tasks.length === 0 ? (
-        <p className="mt-6 text-sm text-zinc-500">{t(ctx.locale, "miniapp.empty")}</p>
-      ) : (
-        <ul className="mt-4 flex flex-col gap-2">
-          {tasks.map((task) => (
-            <li key={task.id}>
-              <Link
-                href={`/app/tasks/${task.id}`}
-                className="block rounded-lg border border-zinc-200 p-3 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="font-medium">{task.title}</span>
-                  <StatusBadge status={task.status} locale={ctx.locale} />
-                </div>
-                <div className="mt-1 text-xs text-zinc-500">
-                  {dueLabel(task.dueAt, task.status, ctx.locale)}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+      <main className="p-4">
+        {tasks.length === 0 ? (
+          <div className="card p-8 text-center">
+            <p className="text-sm text-muted">{t(ctx.locale, "miniapp.empty")}</p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {tasks.map((task, i) => (
+              <li key={task.id} className="animate-rise" style={{ animationDelay: `${i * 0.04}s` }}>
+                <Link href={`/app/tasks/${task.id}`} className="card card-hover block p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium">{task.title}</span>
+                    <StatusBadge status={task.status} locale={ctx.locale} />
+                  </div>
+                  <div className="mt-1.5 text-xs text-muted">
+                    {dueLabel(task.dueAt, task.status, ctx.locale)}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </>
   );
 }

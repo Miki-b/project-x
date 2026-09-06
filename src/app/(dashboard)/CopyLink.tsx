@@ -23,19 +23,15 @@ export function CopyLink({ url, locale }: { url: string; locale: Locale }) {
   }
 
   return (
-    <div className="mt-3 flex gap-2">
+    <div className="flex gap-2">
       <input
         ref={inputRef}
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
-        className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className="input flex-1 font-mono text-xs"
       />
-      <button
-        type="button"
-        onClick={copy}
-        className="whitespace-nowrap rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-      >
+      <button type="button" onClick={copy} className="btn btn-primary shrink-0">
         {copied ? t(locale, "dashboard.copied") : t(locale, "dashboard.copy")}
       </button>
     </div>

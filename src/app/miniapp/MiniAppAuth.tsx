@@ -74,5 +74,15 @@ export function MiniAppAuth() {
         ? t("en", "miniapp.auth_failed")
         : t("en", "miniapp.authenticating");
 
-  return <main className="p-6 text-center text-sm text-zinc-600 dark:text-zinc-400">{message}</main>;
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      {state === "loading" ? (
+        <span
+          aria-hidden
+          className="h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary"
+        />
+      ) : null}
+      <p className="max-w-xs text-sm text-muted">{message}</p>
+    </main>
+  );
 }

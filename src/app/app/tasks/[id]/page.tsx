@@ -25,35 +25,37 @@ export default async function EmployeeTaskDetail({ params }: { params: Promise<{
   }
 
   return (
-    <main className="p-4">
-      <Link href="/app" className="text-sm text-zinc-500">
+    <main className="animate-rise p-4">
+      <Link href="/app" className="link text-sm">
         {t(ctx.locale, "miniapp.back")}
       </Link>
 
-      <div className="mt-3 flex items-start justify-between gap-2">
-        <h1 className="text-lg font-semibold">{task.title}</h1>
-        <StatusBadge status={task.status} locale={ctx.locale} />
-      </div>
+      <div className="card mt-3 p-5">
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="text-lg font-semibold tracking-tight">{task.title}</h1>
+          <StatusBadge status={task.status} locale={ctx.locale} />
+        </div>
 
-      {task.description ? (
-        <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{task.description}</p>
-      ) : null}
+        {task.description ? (
+          <p className="mt-2 text-sm text-muted">{task.description}</p>
+        ) : null}
 
-      <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-        <div className="py-1">{dueLabel(task.dueAt, task.status, ctx.locale)}</div>
-        <div className="py-1">
-          {t(ctx.locale, "miniapp.assigned_to")}: {task.assignee.name || "—"}
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 text-sm">
+          <span>{dueLabel(task.dueAt, task.status, ctx.locale)}</span>
+          <span className="text-muted">
+            {t(ctx.locale, "miniapp.assigned_to")}: {task.assignee.name || "—"}
+          </span>
         </div>
       </div>
 
       <TaskActions taskId={task.id} status={task.status} locale={ctx.locale} />
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold">{t(ctx.locale, "miniapp.history")}</h2>
-        <ul className="mt-2 flex flex-col gap-2">
+        <h2 className="mb-2 text-sm font-semibold">{t(ctx.locale, "miniapp.history")}</h2>
+        <ul className="flex flex-col gap-2">
           {task.updates.map((u) => (
-            <li key={u.id} className="rounded-lg bg-zinc-50 p-2 text-sm dark:bg-zinc-900">
-              <div className="flex justify-between text-xs text-zinc-500">
+            <li key={u.id} className="glass rounded-xl p-2.5 text-sm">
+              <div className="flex justify-between text-xs text-muted">
                 <span>{t(ctx.locale, `miniapp.update.${u.type}`)}</span>
                 <span>{formatInAddis(u.createdAt, "LLL d · HH:mm")}</span>
               </div>
@@ -62,7 +64,7 @@ export default async function EmployeeTaskDetail({ params }: { params: Promise<{
               ) : null}
               {u.note ? <div className="mt-0.5">{u.note}</div> : null}
               {u.actor?.name ? (
-                <div className="mt-0.5 text-xs text-zinc-500">{u.actor.name}</div>
+                <div className="mt-0.5 text-xs text-muted">{u.actor.name}</div>
               ) : null}
             </li>
           ))}
