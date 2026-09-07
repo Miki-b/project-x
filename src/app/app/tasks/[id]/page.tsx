@@ -25,7 +25,7 @@ export default async function EmployeeTaskDetail({ params }: { params: Promise<{
   }
 
   return (
-    <main className="animate-rise p-4">
+    <main className="animate-rise mx-auto max-w-2xl p-4 sm:p-6">
       <Link href="/app" className="link text-sm">
         {t(ctx.locale, "miniapp.back")}
       </Link>
