@@ -24,9 +24,9 @@ export function PortalShell({
   const [active, setActive] = useState(tabs[0]?.id);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col md:flex-row">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col lg:flex-row">
       {/* Desktop sidebar */}
-      <aside className="glass sticky top-0 z-20 hidden h-screen w-60 shrink-0 flex-col border-r border-border p-4 md:flex">
+      <aside className="glass sticky top-0 z-20 hidden h-screen w-60 shrink-0 flex-col border-r border-border p-4 lg:flex">
         <div className="mb-6 flex items-center gap-2.5 px-1">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
             <BrandMark size={18} />
@@ -50,8 +50,8 @@ export function PortalShell({
         ) : null}
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="glass sticky top-0 z-20 border-b border-border md:hidden">
+      {/* Phone + tablet top bar */}
+      <header className="glass sticky top-0 z-20 border-b border-border lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
@@ -81,7 +81,7 @@ export function PortalShell({
         </nav>
       </header>
 
-      <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-10">
+      <main className="min-w-0 flex-1 px-5 py-6 sm:px-6 lg:px-10 lg:py-10">
         <div key={active} className="animate-rise">
           {sections[active ?? ""]}
         </div>

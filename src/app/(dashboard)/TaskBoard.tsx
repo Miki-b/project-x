@@ -37,7 +37,7 @@ export function TaskBoard({ tasks, locale }: { tasks: TaskWithAssignee[]; locale
   for (const task of tasks) grouped.get(task.status)?.push(task);
 
   return (
-    <div className="mt-5 space-y-6">
+    <div className="mt-5 gap-6 lg:columns-2 xl:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
       {STATUS_ORDER.map((status) => {
         const group = grouped.get(status) ?? [];
         if (group.length === 0) return null;

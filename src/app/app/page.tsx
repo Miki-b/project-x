@@ -34,7 +34,7 @@ export default async function EmployeeHome() {
   const headerRight = (
     <>
       <ThemeToggle />
-      <form action={employeeSignOutAction} className="md:ml-auto">
+      <form action={employeeSignOutAction} className="lg:ml-auto">
         <button type="submit" className="btn btn-ghost h-9 px-3">
           {t(ctx.locale, "employee.sign_out")}
         </button>
@@ -61,10 +61,10 @@ function TaskList({ tasks, locale }: { tasks: Task[]; locale: Locale }) {
     );
   }
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {tasks.map((task, i) => (
         <li key={task.id} className="animate-rise" style={{ animationDelay: `${i * 0.04}s` }}>
-          <Link href={`/app/tasks/${task.id}`} className="card card-hover block p-4">
+          <Link href={`/app/tasks/${task.id}`} className="card card-hover block h-full p-4">
             <div className="flex items-start justify-between gap-2">
               <span className="font-medium">{task.title}</span>
               <StatusBadge status={task.status} locale={locale} />

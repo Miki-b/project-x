@@ -91,19 +91,26 @@ export async function authenticateWebLoginToken(
   return { token: created.token, session: created.session, user };
 }
 
-/** Resolve a raw cookie token to its session + user, or null if missing/expired. */
+/**
+ * Resolve a raw cookie token to its session + user (+ the org's locale, so employee surfaces
+ * can render in the org's language), or null if missing/expired.
+ */
 export async function validateSession(
   token: string,
-): Promise<{ session: Session; user: User } | null> {
+): Promise<{ session: Session; user: User; orgLocale: string } | null> {
   const id = hashSessionToken(token);
-  const row = await basePrisma.session.findUnique({ where: { id }, include: { user: true } });
+  const row = await basePrisma.session.findUnique({
+    where: { id },
+    include: { user: { include: { organization: true } } },
+  });
   if (!row) return null;
   if (row.expiresAt.getTime() <= Date.now()) {
     await basePrisma.session.delete({ where: { id } }).catch(() => {});
     return null;
   }
   const { user, ...session } = row;
-  return { session, user };
+  const { organization, ...userPlain } = user;
+  return { session, user: userPlain, orgLocale: organization.locale };
 }
 
 /** Delete a session (logout). Idempotent — a missing session is not an error. */

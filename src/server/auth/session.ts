@@ -76,6 +76,7 @@ export async function getMiniAppCtx(): Promise<Ctx | null> {
     orgId: result.session.orgId,
     actorId: result.user.id,
     role: "MEMBER",
-    locale: "en",
+    // Employee surfaces (Mini App + /app portal) render in the org's language.
+    locale: result.orgLocale === "am" ? "am" : "en",
   };
 }
