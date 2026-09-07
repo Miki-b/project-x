@@ -25,7 +25,7 @@ export async function GET(
   if (!att) return new Response("Not found", { status: 404 });
 
   try {
-    const result = await get(att.url, { access: "private" });
+    const result = await get(att.pathname, { access: "private" });
     if (!result || result.statusCode !== 200 || !result.stream) {
       return new Response("Not found", { status: 404 });
     }
