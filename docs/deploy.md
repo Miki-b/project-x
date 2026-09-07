@@ -110,14 +110,15 @@ With a stable URL you can pin the Mini App: `/setmenubutton` → the bot → sen
 `https://project-x-blue-three.vercel.app` → label it (e.g. "Tasks"). Employees then get a
 persistent button that opens the Mini App.
 
-### Employee web app (`/app`) — Login Widget domain
+### Employee web app (`/app`) — bot deep-link login
 
-The standalone employee browser app at `/app` signs employees in with the **Telegram Login
-Widget** ([src/app/app/login](../src/app/app/login/page.tsx), verified in
-[telegram-login.ts](../src/server/auth/telegram-login.ts)). The widget only renders once the
-bot's domain is registered: in @BotFather → `/setdomain` → the bot → send
-`project-x-blue-three.vercel.app`. Until then the button shows "Bot domain invalid". Only users
-who joined via the bot (so they have a `telegramUserId`) and are `ACTIVE` can sign in.
+The standalone employee browser app at `/app` signs employees in via a **bot deep-link**, not a
+password. On [/app/login](../src/app/app/login/page.tsx) they tap "Continue with Telegram" →
+`t.me/<bot>?start=weblogin` opens the bot → the bot ([handlers/start.ts](../src/server/telegram/handlers/start.ts))
+replies with a one-tap button carrying a short-lived signed token ([login-token.ts](../src/lib/login-token.ts))
+→ [/app/auth](../src/app/app/auth/route.ts) verifies it and sets the session. The `/app` bot
+command does the same on demand. Only users who joined via the bot (so they have a
+`telegramUserId`) and are `ACTIVE` can sign in. No BotFather domain setup is required.
 
 ## Scheduled jobs (cron tick)
 
