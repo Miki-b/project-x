@@ -3,7 +3,7 @@ import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
 import { MiniAppAuth } from "./MiniAppAuth";
-import { StatusBadge, dueLabel } from "./ui";
+import { StatusBadge, ProjectBadge, dueLabel } from "./ui";
 
 // Employee task list: flat, sorted by due date (overdue first). Tapping opens the detail.
 export default async function MiniAppPage() {
@@ -33,8 +33,9 @@ export default async function MiniAppPage() {
                   <span className="font-medium">{task.title}</span>
                   <StatusBadge status={task.status} locale={ctx.locale} />
                 </div>
-                <div className="mt-1.5 text-xs text-muted">
-                  {dueLabel(task.dueAt, task.status, ctx.locale)}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+                  <span>{dueLabel(task.dueAt, task.status, ctx.locale)}</span>
+                  {task.project ? <ProjectBadge name={task.project.name} /> : null}
                 </div>
               </Link>
             </li>

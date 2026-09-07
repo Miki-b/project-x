@@ -21,6 +21,16 @@ export function StatusBadge({ status, locale }: { status: TaskStatus; locale: Lo
   );
 }
 
+/** Small project chip shown on tasks that belong to a project. */
+export function ProjectBadge({ name }: { name: string }) {
+  return (
+    <span className="badge max-w-[10rem] truncate">
+      <span aria-hidden>🗂</span>
+      <span className="truncate">{name}</span>
+    </span>
+  );
+}
+
 /** Human due label in Addis time, with an "Overdue" prefix for past-due open tasks. */
 export function dueLabel(dueAt: Date | null, status: TaskStatus, locale: Locale): string {
   if (!dueAt) return t(locale, "miniapp.no_due");

@@ -30,6 +30,7 @@ export type CreateTaskInput = {
   assigneeId: string;
   dueAt?: Date;
   source?: TaskSource;
+  projectId?: string;
 };
 
 /** Create + assign a task. Manager-only. Enqueues a TASK_REMINDER when there is a deadline. */
@@ -41,6 +42,12 @@ export async function createTask(ctx: Ctx, input: CreateTaskInput): Promise<Task
   const assignee = await db.user.findFirst({ where: { id: input.assigneeId } });
   if (!assignee) throw new NotAuthorised("Assignee is not a member of this organisation");
 
+  // If a project is given it must belong to this org (orgDb scopes the lookup). Optional.
+  if (input.projectId) {
+    const project = await db.project.findFirst({ where: { id: input.projectId } });
+    if (!project) throw new NotAuthorised("Project is not part of this organisation");
+  }
+
   return db.$transaction(async (tx) => {
     const task = await tx.task.create({
       data: {
@@ -51,6 +58,7 @@ export async function createTask(ctx: Ctx, input: CreateTaskInput): Promise<Task
         createdById: ctx.actorId,
         dueAt: input.dueAt ?? null,
         source: input.source ?? "MANUAL",
+        projectId: input.projectId ?? null,
         status: "PENDING",
       },
     });
@@ -179,10 +187,14 @@ export async function attachProof(
 }
 
 /** The assignee's tasks, flat, sorted by due date (overdue first; no-due last). */
-export async function listTasksForAssignee(ctx: Ctx, assigneeId: string): Promise<Task[]> {
+export async function listTasksForAssignee(
+  ctx: Ctx,
+  assigneeId: string,
+): Promise<TaskWithProject[]> {
   if (!isManager(ctx) && assigneeId !== ctx.actorId) throw new NotAuthorised();
   return orgDb(ctx.orgId).task.findMany({
     where: { assigneeId },
+    include: { project: true },
     orderBy: [{ dueAt: "asc" }],
   });
 }
@@ -190,19 +202,32 @@ export async function listTasksForAssignee(ctx: Ctx, assigneeId: string): Promis
 export type TaskWithHistory = Prisma.TaskGetPayload<{
   include: {
     assignee: true;
+    project: true;
     updates: { include: { actor: true } };
   };
 }>;
 
 export type TaskWithAssignee = Prisma.TaskGetPayload<{
-  include: { assignee: true };
+  include: { assignee: true; project: true };
 }>;
+
+/** A task with its project (for the employee/Mini App lists that badge the project). */
+export type TaskWithProject = Prisma.TaskGetPayload<{ include: { project: true } }>;
 
 /** All tasks in the org for the manager board — flat, sorted by due date (no-due last). */
 export async function listOrgTasks(ctx: Ctx): Promise<TaskWithAssignee[]> {
   if (!isManager(ctx)) throw new NotAuthorised();
   return orgDb(ctx.orgId).task.findMany({
-    include: { assignee: true },
+    include: { assignee: true, project: true },
+    orderBy: [{ dueAt: "asc" }],
+  });
+}
+
+/** Tasks in a single project (manager board or a member's project view). */
+export async function listProjectTasks(ctx: Ctx, projectId: string): Promise<TaskWithAssignee[]> {
+  return orgDb(ctx.orgId).task.findMany({
+    where: { projectId },
+    include: { assignee: true, project: true },
     orderBy: [{ dueAt: "asc" }],
   });
 }
@@ -213,6 +238,7 @@ export async function getTask(ctx: Ctx, taskId: string): Promise<TaskWithHistory
     where: { id: taskId },
     include: {
       assignee: true,
+      project: true,
       updates: { include: { actor: true }, orderBy: { createdAt: "asc" } },
     },
   });

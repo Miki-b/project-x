@@ -17,12 +17,16 @@ export function taskCardText(opts: {
   blockedReason?: string | null;
   isNew?: boolean;
   askReason?: boolean;
+  projectName?: string | null;
 }): string {
   const { locale } = opts;
   const lines: string[] = [];
 
   if (opts.isNew) lines.push(t(locale, "task.card.new_badge"));
   lines.push(truncateTitle(opts.title));
+  if (opts.projectName) {
+    lines.push(t(locale, "task.card.project", { project: truncateTitle(opts.projectName, 32) }));
+  }
   lines.push(
     opts.dueAt
       ? t(locale, "task.card.due", { due: formatInAddis(opts.dueAt, "LLL d · HH:mm") })

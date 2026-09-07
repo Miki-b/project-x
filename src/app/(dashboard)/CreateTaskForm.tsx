@@ -9,7 +9,17 @@ import { createTaskAction } from "./actions";
 
 const INITIAL: TaskFormState = {};
 
-export function CreateTaskForm({ members, locale }: { members: User[]; locale: Locale }) {
+export function CreateTaskForm({
+  members,
+  locale,
+  projects = [],
+  defaultProjectId,
+}: {
+  members: User[];
+  locale: Locale;
+  projects?: { id: string; name: string }[];
+  defaultProjectId?: string;
+}) {
   const [state, action, pending] = useActionState(createTaskAction, INITIAL);
   const activeMembers = members.filter((m) => m.status === "ACTIVE");
 
@@ -37,6 +47,24 @@ export function CreateTaskForm({ members, locale }: { members: User[]; locale: L
           <input name="dueAt" type="datetime-local" className="input" />
         </label>
       </div>
+
+      {projects.length > 0 ? (
+        defaultProjectId ? (
+          <input type="hidden" name="projectId" value={defaultProjectId} />
+        ) : (
+          <label className="flex flex-col gap-1.5">
+            <span className="field-label">{t(locale, "projects.label")}</span>
+            <select name="projectId" className="input" defaultValue="">
+              <option value="">{t(locale, "projects.none_option")}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
+      ) : null}
 
       <label className="flex flex-col gap-1.5">
         <span className="field-label">{t(locale, "dashboard.task_description")}</span>

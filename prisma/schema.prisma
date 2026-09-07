@@ -99,6 +99,8 @@ model Organization {
   recurringTemplates RecurringTemplate[]
   jobs               Job[]
   sessions           Session[]
+  projects           Project[]
+  projectMembers     ProjectMember[]
 
   @@map("organizations")
 }
@@ -139,6 +141,8 @@ model User {
   recurringTemplates RecurringTemplate[] @relation("TemplateAssignee")
   consumedInvite     Invite?             @relation("InviteConsumer")
   sessions           Session[]
+  createdProjects    Project[]           @relation("ProjectCreator")
+  projectMemberships ProjectMember[]     @relation("ProjectMembership")
 
   // Per-org uniqueness, not global: one person may later serve two companies (§4.3).
   @@unique([orgId, telegramUserId])
@@ -209,6 +213,8 @@ model Task {
   status      TaskStatus @default(PENDING)
   source      TaskSource @default(MANUAL)
   templateId  String?
+  // Optional project grouping (§4.11). A task may belong to one project or stand alone.
+  projectId   String?
   completedAt DateTime? // set only on transition to DONE
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -217,6 +223,8 @@ model Task {
   assignee     User               @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
   createdBy    User               @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
   template     RecurringTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  // Deleting a project detaches its tasks rather than removing them (they stay independent).
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   updates TaskUpdate[]
 
@@ -224,7 +232,50 @@ model Task {
   @@index([orgId, status, dueAt]) // manager board
   @@index([orgId, dueAt]) // reminder sweeps
   @@index([templateId, createdAt]) // recurrence dedupe
+  @@index([orgId, projectId]) // project task list
   @@map("tasks")
+}
+
+// ---------------------------------------------------------------------------
+// Project — optional grouping of tasks with a specific set of members. (§4.11)
+// Managed by managers; a task may reference one project or none. Deleting a project
+// detaches its tasks (Task.projectId -> SetNull) rather than removing them.
+// ---------------------------------------------------------------------------
+
+model Project {
+  id          String    @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  createdById String
+  archivedAt  DateTime? // soft archive; archived projects drop out of the active list
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  organization Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members      ProjectMember[]
+  tasks        Task[]
+
+  @@index([orgId, archivedAt])
+  @@map("projects")
+}
+
+// Join table: which users belong to a project. Carries orgId per the multi-tenancy rule (§5).
+model ProjectMember {
+  id        String   @id @default(cuid())
+  orgId     String
+  projectId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User         @relation("ProjectMembership", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([orgId, userId])
+  @@map("project_members")
 }
 
 // ---------------------------------------------------------------------------

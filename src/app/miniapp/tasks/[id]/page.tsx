@@ -43,6 +43,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           <span className="text-muted">
             {t(ctx.locale, "miniapp.assigned_to")}: {task.assignee.name || "—"}
           </span>
+          {task.project ? (
+            <span className="text-muted">
+              {t(ctx.locale, "projects.label")}: {task.project.name}
+            </span>
+          ) : null}
         </div>
       </div>
 

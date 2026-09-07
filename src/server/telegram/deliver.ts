@@ -30,7 +30,7 @@ export async function sendTaskCardToAssignee(
   const db = orgDb(orgId);
   const task = await db.task.findFirst({
     where: { id: taskId },
-    include: { assignee: true, createdBy: true },
+    include: { assignee: true, createdBy: true, project: true },
   });
   if (!task) {
     logger.warn("task card: task not found, skipping", { taskId });
@@ -69,6 +69,7 @@ export async function sendTaskCardToAssignee(
     completedAt: task.completedAt,
     blockedReason,
     isNew,
+    projectName: task.project?.name ?? null,
   });
   // Optional header line (e.g. the reminder banner) prepended in the assignee's locale.
   const text = opts?.headerKey ? `${t(locale, opts.headerKey)}\n${card}` : card;

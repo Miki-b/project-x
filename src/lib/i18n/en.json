@@ -32,6 +32,26 @@
     "task_view": "View",
     "back": "← Back"
   },
+  "projects": {
+    "heading": "Projects",
+    "new": "New project",
+    "name": "Project name",
+    "description": "Description (optional)",
+    "members": "Members",
+    "create": "Create project",
+    "empty": "No projects yet. Create your first one.",
+    "no_members": "No members yet.",
+    "save_members": "Save members",
+    "members_saved": "Members updated.",
+    "label": "Project",
+    "none_option": "No project",
+    "error_name": "A project name is required.",
+    "created_by": "Created by",
+    "archive": "Archive project",
+    "tasks": "Tasks",
+    "count_members": "{{count}} members",
+    "count_tasks": "{{count}} tasks"
+  },
   "team": {
     "status": {
       "INVITED": "Invited",
@@ -142,6 +162,7 @@
       "new_badge": "🆕 New task",
       "due": "🗓 {{due}}",
       "no_due": "🗓 No date set",
+      "project": "🗂 {{project}}",
       "from": "👤 {{manager}}",
       "status": "▸ {{status}}",
       "blocked_reason": "⛔ Stuck: {{reason}}",

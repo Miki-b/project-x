@@ -93,7 +93,7 @@ export async function renderCard(
 ): Promise<{ text: string; keyboard: InlineKeyboard } | null> {
   const task = await orgDb(ctx.orgId).task.findFirst({
     where: { id: taskId },
-    include: { createdBy: true },
+    include: { createdBy: true, project: true },
   });
   if (!task) return null;
 
@@ -108,6 +108,7 @@ export async function renderCard(
     blockedReason: opts?.blockedReason ?? null,
     isNew: opts?.isNew,
     askReason: opts?.askReason,
+    projectName: task.project?.name ?? null,
   });
   const keyboard = opts?.askReason
     ? reasonKeyboard(task.id, ctx.locale, appUrl)

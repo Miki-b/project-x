@@ -59,6 +59,12 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 : t(ctx.locale, "miniapp.no_due")}
             </span>
           </span>
+          {task.project ? (
+            <span className="flex flex-col">
+              <span className="field-label">{t(ctx.locale, "projects.label")}</span>
+              <span className="font-medium">{task.project.name}</span>
+            </span>
+          ) : null}
         </div>
       </div>
 

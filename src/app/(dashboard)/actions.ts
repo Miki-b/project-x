@@ -1,15 +1,17 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { login } from "@/server/services/auth";
 import { createTask } from "@/server/services/tasks";
+import { createProject, setProjectMembers, archiveProject } from "@/server/services/projects";
 import { sendTaskCardToAssignee } from "@/server/telegram/deliver";
 import { setSessionCookie, signOut, getCurrentCtx } from "@/server/auth/session";
 import { NotAuthorised } from "@/types";
 import { logger } from "@/lib/logger";
 import { t } from "@/lib/i18n";
-import type { LoginState, TaskFormState } from "./types";
+import type { LoginState, TaskFormState, ProjectFormState } from "./types";
 
 // Minimal manager login so the dashboard is reachable (docs/architecture.md §11).
 // The session mechanism (auth service + cookie adapter) already exists; this only wires it.
@@ -46,6 +48,7 @@ const CreateTaskSchema = z.object({
   description: z.string().optional(),
   assigneeId: z.string().min(1),
   dueAt: z.string().optional(),
+  projectId: z.string().optional(),
 });
 
 export async function createTaskAction(
@@ -60,10 +63,11 @@ export async function createTaskAction(
     description: formData.get("description") || undefined,
     assigneeId: formData.get("assigneeId"),
     dueAt: formData.get("dueAt") || undefined,
+    projectId: formData.get("projectId") || undefined,
   });
   if (!parsed.success) return { error: t(ctx.locale, "dashboard.task_error_required") };
 
-  const { title, description, assigneeId, dueAt } = parsed.data;
+  const { title, description, assigneeId, dueAt, projectId } = parsed.data;
 
   let taskId: string;
   try {
@@ -72,6 +76,7 @@ export async function createTaskAction(
       description,
       assigneeId,
       dueAt: dueAt ? new Date(dueAt) : undefined,
+      projectId: projectId || undefined,
     });
     taskId = task.id;
   } catch (err) {
@@ -91,5 +96,62 @@ export async function createTaskAction(
     });
   }
 
+  redirect("/");
+}
+
+// --- Projects (docs/architecture.md §4.11) ------------------------------------------------
+
+const CreateProjectSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
+
+export async function createProjectAction(
+  _prev: ProjectFormState,
+  formData: FormData,
+): Promise<ProjectFormState> {
+  const ctx = await getCurrentCtx();
+  if (!ctx) return { error: t("en", "auth.invalid") };
+
+  const parsed = CreateProjectSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description") || undefined,
+  });
+  if (!parsed.success) return { error: t(ctx.locale, "projects.error_name") };
+
+  const memberIds = formData.getAll("memberIds").map(String).filter(Boolean);
+
+  let projectId: string;
+  try {
+    const project = await createProject(ctx, {
+      name: parsed.data.name,
+      description: parsed.data.description,
+      memberIds,
+    });
+    projectId = project.id;
+  } catch (err) {
+    if (err instanceof NotAuthorised) return { error: t(ctx.locale, "projects.error_name") };
+    throw err;
+  }
+
+  redirect(`/projects/${projectId}`);
+}
+
+export async function setProjectMembersAction(formData: FormData): Promise<void> {
+  const ctx = await getCurrentCtx();
+  if (!ctx) return;
+  const projectId = String(formData.get("projectId") || "");
+  if (!projectId) return;
+  const memberIds = formData.getAll("memberIds").map(String).filter(Boolean);
+  await setProjectMembers(ctx, projectId, memberIds);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function archiveProjectAction(formData: FormData): Promise<void> {
+  const ctx = await getCurrentCtx();
+  if (!ctx) return;
+  const projectId = String(formData.get("projectId") || "");
+  if (!projectId) return;
+  await archiveProject(ctx, projectId);
   redirect("/");
 }

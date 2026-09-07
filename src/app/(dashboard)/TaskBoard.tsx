@@ -4,6 +4,7 @@ import type { Locale } from "@/types";
 import { t } from "@/lib/i18n";
 import { formatInAddis } from "@/lib/time";
 import { truncateTitle } from "@/server/telegram/messages/task";
+import { ProjectBadge } from "@/app/miniapp/ui";
 
 const STATUS_ORDER: TaskStatus[] = ["PENDING", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"];
 
@@ -65,7 +66,7 @@ export function TaskBoard({ tasks, locale }: { tasks: TaskWithAssignee[]; locale
                         <span className="block truncate text-sm font-medium">
                           {truncateTitle(task.title)}
                         </span>
-                        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                        <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
                           <span className="truncate">{task.assignee.name}</span>
                           {task.dueAt ? (
                             <>
@@ -75,6 +76,7 @@ export function TaskBoard({ tasks, locale }: { tasks: TaskWithAssignee[]; locale
                               </span>
                             </>
                           ) : null}
+                          {task.project ? <ProjectBadge name={task.project.name} /> : null}
                         </span>
                       </div>
                       <span

@@ -2,3 +2,4 @@
 // export async functions.
 export type LoginState = { error: string };
 export type TaskFormState = { error?: string };
+export type ProjectFormState = { error?: string };

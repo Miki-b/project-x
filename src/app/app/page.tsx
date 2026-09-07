@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Task } from "@/generated/prisma/client";
 import type { Locale } from "@/types";
 import { getMiniAppCtx } from "@/server/auth/session";
-import { listTasksForAssignee } from "@/server/services/tasks";
+import { listTasksForAssignee, type TaskWithProject } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
-import { StatusBadge, dueLabel } from "@/app/miniapp/ui";
+import { StatusBadge, ProjectBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
 
 // Employee portal (browser). Same session as the Mini App; here obtained via the bot deep-link.
@@ -54,7 +53,7 @@ export default async function EmployeeHome() {
   );
 }
 
-function TaskList({ tasks, locale }: { tasks: Task[]; locale: Locale }) {
+function TaskList({ tasks, locale }: { tasks: TaskWithProject[]; locale: Locale }) {
   if (tasks.length === 0) {
     return (
       <div className="card p-8 text-center">
@@ -71,8 +70,9 @@ function TaskList({ tasks, locale }: { tasks: Task[]; locale: Locale }) {
               <span className="font-medium">{task.title}</span>
               <StatusBadge status={task.status} locale={locale} />
             </div>
-            <div className="mt-1.5 text-xs text-muted">
-              {dueLabel(task.dueAt, task.status, locale)}
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span>{dueLabel(task.dueAt, task.status, locale)}</span>
+              {task.project ? <ProjectBadge name={task.project.name} /> : null}
             </div>
           </Link>
         </li>

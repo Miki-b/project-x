@@ -32,6 +32,26 @@
     "task_view": "ይመልከቱ",
     "back": "← ተመለስ"
   },
+  "projects": {
+    "heading": "ፕሮጀክቶች",
+    "new": "አዲስ ፕሮጀክት",
+    "name": "የፕሮጀክት ስም",
+    "description": "መግለጫ (አማራጭ)",
+    "members": "አባላት",
+    "create": "ፕሮጀክት ፍጠር",
+    "empty": "እስካሁን ፕሮጀክት የለም። የመጀመሪያዎን ይፍጠሩ።",
+    "no_members": "እስካሁን አባል የለም።",
+    "save_members": "አባላትን አስቀምጥ",
+    "members_saved": "አባላት ተዘምነዋል።",
+    "label": "ፕሮጀክት",
+    "none_option": "ፕሮጀክት የለም",
+    "error_name": "የፕሮጀክት ስም ያስፈልጋል።",
+    "created_by": "የፈጠረው",
+    "archive": "ፕሮጀክት አርክቫ",
+    "tasks": "ተግባሮች",
+    "count_members": "{{count}} አባላት",
+    "count_tasks": "{{count}} ተግባሮች"
+  },
   "team": {
     "status": {
       "INVITED": "ተጋብዟል",
@@ -142,6 +162,7 @@
       "new_badge": "🆕 አዲስ ተግባር",
       "due": "🗓 {{due}}",
       "no_due": "🗓 ቀን አልተቀመጠም",
+      "project": "🗂 {{project}}",
       "from": "👤 {{manager}}",
       "status": "▸ {{status}}",
       "blocked_reason": "⛔ ተስተጓጉሏል፦ {{reason}}",
