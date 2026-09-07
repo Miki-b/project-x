@@ -8,6 +8,7 @@ import { verifyPassword } from "@/lib/password";
 import { generateSessionToken, hashSessionToken } from "@/lib/session-token";
 import { verifyInitData } from "@/server/auth/telegram-init-data";
 import { verifyTelegramLogin } from "@/server/auth/telegram-login";
+import { verifyLoginToken } from "@/lib/login-token";
 import { NotAuthorised } from "@/types";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -87,6 +88,25 @@ export async function authenticateEmployeeLogin(
   const { telegramUserId } = verifyTelegramLogin(params, token); // throws on tamper / staleness
   const user = await basePrisma.user.findFirst({ where: { telegramUserId } });
   if (!user || user.status !== "ACTIVE") throw new NotAuthorised();
+
+  const created = await createSession(user.id, user.orgId);
+  return { token: created.token, session: created.session, user };
+}
+
+/**
+ * Authenticate an employee from a bot-issued web-login token (docs/architecture.md §11).
+ * The bot minted the token for an ACTIVE user it had already identified by Telegram id; we
+ * re-check the user is still ACTIVE (and the org matches) before minting a session. Returns
+ * null on any invalid/expired/stale token so the caller can bounce back to the login page.
+ */
+export async function authenticateWebLoginToken(
+  token: string,
+): Promise<AuthenticatedSession | null> {
+  const verified = verifyLoginToken(token);
+  if (!verified) return null;
+
+  const user = await basePrisma.user.findFirst({ where: { id: verified.userId } });
+  if (!user || user.status !== "ACTIVE" || user.orgId !== verified.orgId) return null;
 
   const created = await createSession(user.id, user.orgId);
   return { token: created.token, session: created.session, user };

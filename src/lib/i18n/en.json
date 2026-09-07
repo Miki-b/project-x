@@ -79,6 +79,8 @@
     "login_hint": "Sign in with your Telegram account to see and manage your tasks.",
     "login_error": "Sign-in failed. Please try again.",
     "login_unconfigured": "Sign-in isn't configured yet. Please contact your manager.",
+    "continue_with_telegram": "Continue with Telegram",
+    "login_steps": "Opens Telegram — tap the button we send you to finish signing in.",
     "sign_out": "Sign out"
   },
   "bot": {
@@ -117,6 +119,9 @@
       "header": "🌇 {{company}} — {{date}}",
       "fallback": "🌇 {{company}} — {{date}}\n✅ Done: {{done}}\n⏳ Past due: {{slipped}}\n⛔ Stuck: {{blocked}}",
       "none": "No activity to report today."
+    },
+    "weblogin": {
+      "prompt": "Tap below to open your task dashboard in the browser."
     }
   },
   "task": {
