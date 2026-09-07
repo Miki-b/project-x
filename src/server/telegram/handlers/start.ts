@@ -52,6 +52,15 @@ export async function handleStart(ctx: Context): Promise<void> {
 }
 
 /**
+ * `/app`: open the employee web app. Same one-tap login button as `/start weblogin`, but as a
+ * command an employee can run any time to jump into the browser dashboard.
+ */
+export async function handleApp(ctx: Context): Promise<void> {
+  if (!ctx.from) return;
+  await handleWebLogin(ctx, ctx.from.id);
+}
+
+/**
  * `/start weblogin`: the employee tapped "Continue with Telegram" on the web app. If we know
  * them (ACTIVE member), send a one-tap button that signs them in on the browser; otherwise
  * tell them to join via their invite link first.

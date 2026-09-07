@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Task } from "@/generated/prisma/client";
+import type { Locale } from "@/types";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BrandMark } from "@/components/BrandMark";
+import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { StatusBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
 
-// Employee task list (browser). Same session as the Mini App; here obtained via the Login Widget.
+// Employee portal (browser). Same session as the Mini App; here obtained via the bot deep-link.
 export const dynamic = "force-dynamic";
 
 export default async function EmployeeHome() {
@@ -16,53 +18,63 @@ export default async function EmployeeHome() {
   if (!ctx) redirect("/app/login");
 
   const tasks = await listTasksForAssignee(ctx, ctx.actorId);
+  const active = tasks.filter((task) => task.status !== "DONE" && task.status !== "CANCELLED");
+  const done = tasks.filter((task) => task.status === "DONE" || task.status === "CANCELLED");
+
+  const tabs: PortalTab[] = [
+    { id: "active", label: t(ctx.locale, "employee.active"), badge: active.length },
+    { id: "done", label: t(ctx.locale, "task.status.DONE"), badge: done.length },
+  ];
+
+  const sections = {
+    active: <TaskList tasks={active} locale={ctx.locale} />,
+    done: <TaskList tasks={done} locale={ctx.locale} />,
+  };
+
+  const headerRight = (
+    <>
+      <ThemeToggle />
+      <form action={employeeSignOutAction} className="md:ml-auto">
+        <button type="submit" className="btn btn-ghost h-9 px-3">
+          {t(ctx.locale, "employee.sign_out")}
+        </button>
+      </form>
+    </>
+  );
 
   return (
-    <>
-      <header className="glass sticky top-0 z-20 border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-              <BrandMark size={18} />
-            </span>
-            <span className="font-display text-base font-semibold tracking-tight">
-              {t(ctx.locale, "miniapp.title")}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <form action={employeeSignOutAction}>
-              <button type="submit" className="btn btn-ghost h-9 px-3">
-                {t(ctx.locale, "employee.sign_out")}
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+    <PortalShell
+      brand={t(ctx.locale, "miniapp.title")}
+      tabs={tabs}
+      sections={sections}
+      headerRight={headerRight}
+    />
+  );
+}
 
-      <main className="p-4">
-        {tasks.length === 0 ? (
-          <div className="card p-8 text-center">
-            <p className="text-sm text-muted">{t(ctx.locale, "miniapp.empty")}</p>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2.5">
-            {tasks.map((task, i) => (
-              <li key={task.id} className="animate-rise" style={{ animationDelay: `${i * 0.04}s` }}>
-                <Link href={`/app/tasks/${task.id}`} className="card card-hover block p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium">{task.title}</span>
-                    <StatusBadge status={task.status} locale={ctx.locale} />
-                  </div>
-                  <div className="mt-1.5 text-xs text-muted">
-                    {dueLabel(task.dueAt, task.status, ctx.locale)}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
-    </>
+function TaskList({ tasks, locale }: { tasks: Task[]; locale: Locale }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="card p-8 text-center">
+        <p className="text-sm text-muted">{t(locale, "miniapp.empty")}</p>
+      </div>
+    );
+  }
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {tasks.map((task, i) => (
+        <li key={task.id} className="animate-rise" style={{ animationDelay: `${i * 0.04}s` }}>
+          <Link href={`/app/tasks/${task.id}`} className="card card-hover block p-4">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-medium">{task.title}</span>
+              <StatusBadge status={task.status} locale={locale} />
+            </div>
+            <div className="mt-1.5 text-xs text-muted">
+              {dueLabel(task.dueAt, task.status, locale)}
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

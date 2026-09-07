@@ -1,5 +1,5 @@
 import type { Bot } from "grammy";
-import { handleStart } from "./start";
+import { handleStart, handleApp } from "./start";
 import { handleText } from "./text";
 import { registerCallbacks } from "./callbacks";
 
@@ -14,6 +14,7 @@ import { registerCallbacks } from "./callbacks";
  */
 export function registerHandlers(bot: Bot): void {
   bot.command("start", handleStart);
+  bot.command("app", handleApp);
   registerCallbacks(bot);
   bot.on("message:text", handleText);
 }

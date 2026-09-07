@@ -81,6 +81,7 @@
     "login_unconfigured": "Sign-in isn't configured yet. Please contact your manager.",
     "continue_with_telegram": "Continue with Telegram",
     "login_steps": "Opens Telegram — tap the button we send you to finish signing in.",
+    "active": "Active",
     "sign_out": "Sign out"
   },
   "bot": {

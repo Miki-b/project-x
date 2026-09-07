@@ -81,6 +81,7 @@
     "login_unconfigured": "መግቢያ ገና አልተዋቀረም። እባክዎ ሥራ አስኪያጅዎን ያነጋግሩ።",
     "continue_with_telegram": "በቴሌግራም ይቀጥሉ",
     "login_steps": "ቴሌግራምን ይከፍታል — መግባትን ለመጨረስ የምንልክልዎትን አዝራር ይንኩ።",
+    "active": "ንቁ",
     "sign_out": "ውጣ"
   },
   "bot": {
