@@ -126,6 +126,8 @@ model User {
   // Durable bot state (bot flow c): the taskId this user is being asked to give a blocker
   // reason for, or null. Survives restarts / multi-instance webhook mode.
   pendingBlockReason String?
+  // Preferred UI/bot language ("en" | "am"). Null = inherit the organisation's locale.
+  locale           String?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 

@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import type { Ctx } from "@/types";
+import type { Ctx, Locale } from "@/types";
 import { validateSession, invalidateSession } from "@/server/services/auth";
 
 /**
@@ -53,9 +53,15 @@ export async function getCurrentCtx(): Promise<Ctx | null> {
     orgId: result.session.orgId,
     actorId: result.user.id,
     role: result.user.role,
-    // Dashboard is English in v1 (Amharic dashboard is post-v1, docs/product.md §13).
-    locale: "en",
+    // Manager's own language preference, falling back to the org's locale.
+    locale: pickLocale(result.user.locale, result.orgLocale),
   };
+}
+
+/** Resolve the effective locale: the user's own choice, else the org default, else English. */
+function pickLocale(userLocale: string | null, orgLocale: string): Locale {
+  const value = userLocale ?? orgLocale;
+  return value === "am" ? "am" : "en";
 }
 
 /**
@@ -76,7 +82,7 @@ export async function getMiniAppCtx(): Promise<Ctx | null> {
     orgId: result.session.orgId,
     actorId: result.user.id,
     role: "MEMBER",
-    // Employee surfaces (Mini App + /app portal) render in the org's language.
-    locale: result.orgLocale === "am" ? "am" : "en",
+    // Employee's own language preference, falling back to the org's locale.
+    locale: pickLocale(result.user.locale, result.orgLocale),
   };
 }

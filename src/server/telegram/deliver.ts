@@ -47,7 +47,8 @@ export async function sendTaskCardToAssignee(
   // Organization is the root table (no orgId column); look it up by PK via basePrisma.
   // Safe: orgId is the caller's own scope, resolved from the session/job, never user input.
   const org = await basePrisma.organization.findUnique({ where: { id: task.orgId } });
-  const locale = asLocale(org?.locale ?? "en");
+  // Deliver in the assignee's chosen language, falling back to the org's locale.
+  const locale = asLocale(task.assignee.locale ?? org?.locale ?? "en");
 
   let blockedReason: string | null = null;
   if (task.status === "BLOCKED") {

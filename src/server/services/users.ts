@@ -1,5 +1,5 @@
 import type { Role, User, UserStatus } from "@/generated/prisma/client";
-import type { Ctx } from "@/types";
+import type { Ctx, Locale } from "@/types";
 import { NotAuthorised } from "@/types";
 import { orgDb } from "@/server/db/client";
 
@@ -15,6 +15,14 @@ export async function getUser(_ctx: Ctx, _userId: string): Promise<User> {
 export async function listMembers(ctx: Ctx): Promise<User[]> {
   if (ctx.role === "MEMBER") throw new NotAuthorised();
   return orgDb(ctx.orgId).user.findMany({ orderBy: [{ status: "asc" }, { name: "asc" }] });
+}
+
+/**
+ * Set the actor's own preferred language. Any authenticated user may change their own; the
+ * choice drives every surface they touch (dashboard/portal, Mini App, and their bot messages).
+ */
+export async function setOwnLocale(ctx: Ctx, locale: Locale): Promise<void> {
+  await orgDb(ctx.orgId).user.update({ where: { id: ctx.actorId }, data: { locale } });
 }
 
 /** Resolve the Telegram identity to a single org member (docs/architecture.md §4.3). */

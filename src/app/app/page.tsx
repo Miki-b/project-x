@@ -6,6 +6,7 @@ import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { StatusBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
@@ -33,6 +34,7 @@ export default async function EmployeeHome() {
 
   const headerRight = (
     <>
+      <LanguageSelector current={ctx.locale} />
       <ThemeToggle />
       <form action={employeeSignOutAction} className="md:ml-auto">
         <button type="submit" className="btn btn-ghost h-9 px-3">

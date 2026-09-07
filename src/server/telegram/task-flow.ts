@@ -32,8 +32,19 @@ function asLocale(value: string): Locale {
   return value === "am" ? "am" : "en";
 }
 
-function memberCtx(user: { orgId: string; id: string; organization: { locale: string } }): Ctx {
-  return { orgId: user.orgId, actorId: user.id, role: "MEMBER", locale: asLocale(user.organization.locale) };
+function memberCtx(user: {
+  orgId: string;
+  id: string;
+  locale: string | null;
+  organization: { locale: string };
+}): Ctx {
+  // The member's own language preference wins, falling back to the org's locale.
+  return {
+    orgId: user.orgId,
+    actorId: user.id,
+    role: "MEMBER",
+    locale: asLocale(user.locale ?? user.organization.locale),
+  };
 }
 
 /** Resolve a Telegram identity to a MEMBER actor Ctx (pre-auth; the bot's tenant entry). */

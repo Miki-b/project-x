@@ -4,6 +4,7 @@ import { listMembers } from "@/server/services/users";
 import { listOrgTasks } from "@/server/services/tasks";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { LoginForm } from "./LoginForm";
 import { CopyLink } from "./CopyLink";
@@ -100,6 +101,7 @@ export default async function DashboardPage() {
 
   const headerRight = (
     <>
+      <LanguageSelector current={ctx.locale} />
       <ThemeToggle />
       <form action={logoutAction} className="md:ml-auto">
         <button type="submit" className="btn btn-ghost h-9 px-3">

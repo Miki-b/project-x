@@ -31,7 +31,6 @@ export const handleDailySummary: JobHandler = async (db, rawPayload, job) => {
     logger.warn("DAILY_SUMMARY: org not found, skipping", { orgId: job.orgId });
     return;
   }
-  const locale = asLocale(org.locale);
   const tz = org.timezone || "Africa/Addis_Ababa";
 
   // Recipients first: if no manager is on Telegram there is nothing to send.
@@ -57,7 +56,8 @@ export const handleDailySummary: JobHandler = async (db, rawPayload, job) => {
     db.task.count({ where: { status: "BLOCKED" } }),
   ]);
 
-  const text =
+  // Render the recap in each manager's own language, falling back to the org locale.
+  const buildText = (locale: Locale): string =>
     done === 0 && slipped === 0 && blocked === 0
       ? `${t(locale, "bot.summary.header", { company: org.name, date: dateLabel })}\n${t(locale, "bot.summary.none")}`
       : t(locale, "bot.summary.fallback", {
@@ -74,7 +74,10 @@ export const handleDailySummary: JobHandler = async (db, rawPayload, job) => {
 
   for (const manager of managers) {
     // telegramChatId is non-null here (filtered above); BigInt → string for grammy.
-    await api.sendMessage(manager.telegramChatId!.toString(), text);
+    await api.sendMessage(
+      manager.telegramChatId!.toString(),
+      buildText(asLocale(manager.locale ?? org.locale)),
+    );
   }
 
   logger.info("DAILY_SUMMARY sent", {
