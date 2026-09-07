@@ -2,11 +2,18 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { getTask, type TaskWithHistory } from "@/server/services/tasks";
+import {
+  listTaskAttachments,
+  listProjectAttachments,
+  type AttachmentWithUploader,
+} from "@/server/services/attachments";
 import { t } from "@/lib/i18n";
 import { formatInAddis } from "@/lib/time";
-import type { Locale } from "@/types";
+import { NotAuthorised, type Locale } from "@/types";
 import { StatusBadge, dueLabel } from "@/app/miniapp/ui";
 import { TaskActions } from "@/app/miniapp/TaskActions";
+import { FileUpload } from "@/components/FileUpload";
+import { AttachmentList } from "@/components/AttachmentList";
 
 // Employee task detail (browser): status actions + a note, plus the full history.
 export const dynamic = "force-dynamic";
@@ -22,6 +29,17 @@ export default async function EmployeeTaskDetail({ params }: { params: Promise<{
   } catch {
     // TaskNotFound or NotAuthorised — never reveal another org's task.
     notFound();
+  }
+
+  const files = await listTaskAttachments(ctx, id);
+  // Project files are visible here only if the assignee is a member of the task's project.
+  let projectFiles: AttachmentWithUploader[] = [];
+  if (task.projectId) {
+    try {
+      projectFiles = await listProjectAttachments(ctx, task.projectId);
+    } catch (err) {
+      if (!(err instanceof NotAuthorised)) throw err;
+    }
   }
 
   return (
@@ -54,6 +72,33 @@ export default async function EmployeeTaskDetail({ params }: { params: Promise<{
       </div>
 
       <TaskActions taskId={task.id} status={task.status} locale={ctx.locale} />
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold">{t(ctx.locale, "files.heading")}</h2>
+        <div className="card flex flex-col gap-4 p-4">
+          <FileUpload kind="task" id={task.id} locale={ctx.locale} />
+          <AttachmentList
+            attachments={files}
+            locale={ctx.locale}
+            actorId={ctx.actorId}
+            isManager={false}
+          />
+        </div>
+      </section>
+
+      {task.project ? (
+        <section className="mt-6">
+          <h2 className="mb-2 text-sm font-semibold">{t(ctx.locale, "files.project_files")}</h2>
+          <div className="card p-4">
+            <AttachmentList
+              attachments={projectFiles}
+              locale={ctx.locale}
+              actorId={ctx.actorId}
+              isManager={false}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-semibold">{t(ctx.locale, "miniapp.history")}</h2>

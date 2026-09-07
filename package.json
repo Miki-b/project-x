@@ -23,6 +23,7 @@
     "@anthropic-ai/sdk": "^0.123.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@vercel/blob": "^2.8.0",
     "dotenv": "^17.4.2",
     "grammy": "^1.46.0",
     "luxon": "^3.7.2",

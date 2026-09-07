@@ -50,3 +50,5 @@ check-jobs.mjs
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.env*

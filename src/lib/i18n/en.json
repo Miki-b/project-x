@@ -52,6 +52,18 @@
     "count_members": "{{count}} members",
     "count_tasks": "{{count}} tasks"
   },
+  "files": {
+    "heading": "Files",
+    "project_files": "Project files",
+    "add": "Add file",
+    "uploading": "Uploading…",
+    "empty": "No files yet.",
+    "delete": "Delete",
+    "by": "by {{name}}",
+    "too_large": "That file is too large (max 10 MB).",
+    "failed": "Upload failed. Please try again.",
+    "hint": "Images or documents, up to 10 MB."
+  },
   "team": {
     "status": {
       "INVITED": "Invited",

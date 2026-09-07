@@ -3,9 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentCtx } from "@/server/auth/session";
 import { getProject } from "@/server/services/projects";
 import { listProjectTasks } from "@/server/services/tasks";
+import { listProjectAttachments } from "@/server/services/attachments";
 import { listMembers } from "@/server/services/users";
 import { NotAuthorised } from "@/types";
 import { t } from "@/lib/i18n";
+import { FileUpload } from "@/components/FileUpload";
+import { AttachmentList } from "@/components/AttachmentList";
 import { TaskBoard } from "../../TaskBoard";
 import { setProjectMembersAction, archiveProjectAction } from "../../actions";
 
@@ -24,9 +27,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     throw err;
   }
 
-  const [tasks, members] = await Promise.all([listProjectTasks(ctx, id), listMembers(ctx)]);
+  const [tasks, members, files] = await Promise.all([
+    listProjectTasks(ctx, id),
+    listMembers(ctx),
+    listProjectAttachments(ctx, id),
+  ]);
   const activeMembers = members.filter((m) => m.status === "ACTIVE");
   const memberIds = new Set(project.members.map((m) => m.userId));
+  const isManager = ctx.role === "OWNER" || ctx.role === "MANAGER";
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8">
@@ -81,8 +89,22 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </form>
       </section>
 
-      {/* Project tasks */}
+      {/* Project files */}
       <section className="animate-rise rise-1 mt-10">
+        <h2 className="font-display text-lg font-semibold">{t(ctx.locale, "files.heading")}</h2>
+        <div className="card mt-3 flex flex-col gap-4 p-5">
+          <FileUpload kind="project" id={project.id} locale={ctx.locale} />
+          <AttachmentList
+            attachments={files}
+            locale={ctx.locale}
+            actorId={ctx.actorId}
+            isManager={isManager}
+          />
+        </div>
+      </section>
+
+      {/* Project tasks */}
+      <section className="animate-rise rise-2 mt-10">
         <h2 className="font-display text-lg font-semibold">{t(ctx.locale, "projects.tasks")}</h2>
         <TaskBoard tasks={tasks} locale={ctx.locale} />
       </section>

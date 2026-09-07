@@ -101,6 +101,7 @@ model Organization {
   sessions           Session[]
   projects           Project[]
   projectMembers     ProjectMember[]
+  attachments        Attachment[]
 
   @@map("organizations")
 }
@@ -143,6 +144,7 @@ model User {
   sessions           Session[]
   createdProjects    Project[]           @relation("ProjectCreator")
   projectMemberships ProjectMember[]     @relation("ProjectMembership")
+  uploadedAttachments Attachment[]       @relation("AttachmentUploader")
 
   // Per-org uniqueness, not global: one person may later serve two companies (§4.3).
   @@unique([orgId, telegramUserId])
@@ -226,7 +228,8 @@ model Task {
   // Deleting a project detaches its tasks rather than removing them (they stay independent).
   project      Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  updates TaskUpdate[]
+  updates     TaskUpdate[]
+  attachments Attachment[]
 
   @@index([orgId, assigneeId, status]) // employee task list
   @@index([orgId, status, dueAt]) // manager board
@@ -256,6 +259,7 @@ model Project {
   createdBy    User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
   members      ProjectMember[]
   tasks        Task[]
+  attachments  Attachment[]
 
   @@index([orgId, archivedAt])
   @@map("projects")
@@ -276,6 +280,36 @@ model ProjectMember {
   @@unique([projectId, userId])
   @@index([orgId, userId])
   @@map("project_members")
+}
+
+// ---------------------------------------------------------------------------
+// Attachment — a file (document/image) in Vercel Blob, attached to EITHER a
+// project (manager-uploaded reference files) or a task (proof/deliverables). (§4.12)
+// Exactly one of projectId / taskId is set (enforced in the service). We store the
+// blob URL + pathname; the bytes live in object storage, never in Postgres.
+// ---------------------------------------------------------------------------
+
+model Attachment {
+  id           String   @id @default(cuid())
+  orgId        String
+  projectId    String?
+  taskId       String?
+  uploadedById String
+  url          String // public Vercel Blob URL
+  pathname     String // blob pathname, used to delete the object
+  name         String // original filename shown in the UI
+  contentType  String
+  size         Int // bytes
+  createdAt    DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task         Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([orgId, projectId])
+  @@index([orgId, taskId])
+  @@map("attachments")
 }
 
 // ---------------------------------------------------------------------------

@@ -52,6 +52,18 @@
     "count_members": "{{count}} አባላት",
     "count_tasks": "{{count}} ተግባሮች"
   },
+  "files": {
+    "heading": "ፋይሎች",
+    "project_files": "የፕሮጀክት ፋይሎች",
+    "add": "ፋይል ጨምር",
+    "uploading": "እየተጫነ ነው…",
+    "empty": "እስካሁን ፋይል የለም።",
+    "delete": "ሰርዝ",
+    "by": "በ{{name}}",
+    "too_large": "ፋይሉ በጣም ትልቅ ነው (ከፍተኛ 10 ሜባ)።",
+    "failed": "መጫን አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+    "hint": "ምስሎች ወይም ሰነዶች፣ እስከ 10 ሜባ።"
+  },
   "team": {
     "status": {
       "INVITED": "ተጋብዟል",

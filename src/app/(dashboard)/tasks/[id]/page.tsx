@@ -2,9 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCtx } from "@/server/auth/session";
 import { getTask } from "@/server/services/tasks";
+import { listTaskAttachments } from "@/server/services/attachments";
 import { TaskNotFound } from "@/types";
 import { t } from "@/lib/i18n";
 import { formatInAddis } from "@/lib/time";
+import { FileUpload } from "@/components/FileUpload";
+import { AttachmentList } from "@/components/AttachmentList";
 
 const STATUS_BADGE: Record<string, string> = {
   PENDING: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
@@ -27,6 +30,9 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     if (err instanceof TaskNotFound) notFound();
     throw err;
   }
+
+  const files = await listTaskAttachments(ctx, id);
+  const isManager = ctx.role === "OWNER" || ctx.role === "MANAGER";
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
@@ -69,6 +75,19 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       <section className="animate-rise rise-1 mt-8">
+        <h2 className="font-display text-lg font-semibold">{t(ctx.locale, "files.heading")}</h2>
+        <div className="card mt-3 flex flex-col gap-4 p-5">
+          <FileUpload kind="task" id={task.id} locale={ctx.locale} />
+          <AttachmentList
+            attachments={files}
+            locale={ctx.locale}
+            actorId={ctx.actorId}
+            isManager={isManager}
+          />
+        </div>
+      </section>
+
+      <section className="animate-rise rise-2 mt-8">
         <h2 className="font-display text-lg font-semibold">
           {t(ctx.locale, "dashboard.task_history")}
         </h2>
