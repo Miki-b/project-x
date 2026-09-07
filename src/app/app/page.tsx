@@ -34,7 +34,7 @@ export default async function EmployeeHome() {
   const headerRight = (
     <>
       <ThemeToggle />
-      <form action={employeeSignOutAction} className="lg:ml-auto">
+      <form action={employeeSignOutAction} className="md:ml-auto">
         <button type="submit" className="btn btn-ghost h-9 px-3">
           {t(ctx.locale, "employee.sign_out")}
         </button>

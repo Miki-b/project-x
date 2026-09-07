@@ -101,7 +101,7 @@ export default async function DashboardPage() {
   const headerRight = (
     <>
       <ThemeToggle />
-      <form action={logoutAction} className="lg:ml-auto">
+      <form action={logoutAction} className="md:ml-auto">
         <button type="submit" className="btn btn-ghost h-9 px-3">
           {t(ctx.locale, "dashboard.logout")}
         </button>
