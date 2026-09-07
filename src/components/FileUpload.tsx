@@ -47,7 +47,7 @@ export function FileUpload({
     setBusy(true);
     try {
       const blob = await upload(`${kind}/${id}/${file.name}`, file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/upload",
         clientPayload: JSON.stringify({ kind, id }),
         contentType: file.type || undefined,

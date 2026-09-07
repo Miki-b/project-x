@@ -33,7 +33,7 @@ export function AttachmentList({
             </span>
             <div className="min-w-0 flex-1">
               <a
-                href={a.url}
+                href={`/api/files/${a.id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="link block truncate text-sm font-medium"
