@@ -32,6 +32,7 @@ export default async function EmployeeHome() {
   const portalBranding = branding
     ? {
         logoVersion: branding.logoPathname ? shortHash(branding.logoPathname) : null,
+        logoDarkVersion: branding.logoDarkPathname ? shortHash(branding.logoDarkPathname) : null,
         primaryLight: branding.primaryLight,
         primaryDark: branding.primaryDark,
         font: branding.font,

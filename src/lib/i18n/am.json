@@ -82,6 +82,8 @@
     "heading": "ቅንብሮች",
     "branding": "ብራንዲንግ",
     "logo": "አርማ",
+    "logo_light": "አርማ · ብርሃን ሁነታ",
+    "logo_dark": "አርማ · ጨለማ ሁነታ",
     "no_logo": "እስካሁን አርማ የለም",
     "upload_logo": "አርማ ስቀል",
     "primary_light": "ዋና ቀለም · ብርሃን",

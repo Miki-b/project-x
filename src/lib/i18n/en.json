@@ -82,6 +82,8 @@
     "heading": "Settings",
     "branding": "Branding",
     "logo": "Logo",
+    "logo_light": "Logo · Light mode",
+    "logo_dark": "Logo · Dark mode",
     "no_logo": "No logo yet",
     "upload_logo": "Upload logo",
     "primary_light": "Primary color · Light",

@@ -11,18 +11,20 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<Response> {
+export async function GET(req: Request): Promise<Response> {
   const ctx = await getCurrentCtx();
   if (!ctx) return new Response("Unauthorized", { status: 401 });
 
+  const dark = new URL(req.url).searchParams.get("variant") === "dark";
   const org = await basePrisma.organization.findUnique({
     where: { id: ctx.orgId },
-    select: { logoPathname: true },
+    select: { logoPathname: true, logoDarkPathname: true },
   });
-  if (!org?.logoPathname) return new Response("Not found", { status: 404 });
+  const pathname = dark ? org?.logoDarkPathname : org?.logoPathname;
+  if (!pathname) return new Response("Not found", { status: 404 });
 
   try {
-    const result = await get(org.logoPathname, { access: "private" });
+    const result = await get(pathname, { access: "private" });
     if (!result || result.statusCode !== 200 || !result.stream) {
       return new Response("Not found", { status: 404 });
     }

@@ -37,9 +37,11 @@ export default async function DashboardPage() {
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
 
   const logoVersion = branding?.logoPathname ? shortHash(branding.logoPathname) : null;
+  const logoDarkVersion = branding?.logoDarkPathname ? shortHash(branding.logoDarkPathname) : null;
   const portalBranding = branding
     ? {
         logoVersion,
+        logoDarkVersion,
         primaryLight: branding.primaryLight,
         primaryDark: branding.primaryDark,
         font: branding.font,
@@ -182,8 +184,8 @@ export default async function DashboardPage() {
             orgId={ctx.orgId}
             locale={ctx.locale}
             branding={{
-              hasLogo: logoVersion !== null,
               logoVersion,
+              logoDarkVersion,
               primaryLight: branding?.primaryLight ?? null,
               primaryDark: branding?.primaryDark ?? null,
               font: branding?.font ?? "default",

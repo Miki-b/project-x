@@ -41,6 +41,7 @@ export async function updateBrandingAction(
 export async function setLogoAction(input: {
   url: string;
   pathname: string;
+  variant: "light" | "dark";
 }): Promise<{ ok: boolean }> {
   const ctx = await getCurrentCtx();
   if (!ctx) return { ok: false };
@@ -53,9 +54,9 @@ export async function setLogoAction(input: {
   }
 }
 
-export async function removeLogoAction(): Promise<void> {
+export async function removeLogoAction(variant: "light" | "dark"): Promise<void> {
   const ctx = await getCurrentCtx();
   if (!ctx) return;
-  await removeLogo(ctx);
+  await removeLogo(ctx, variant);
   revalidatePath("/", "layout");
 }

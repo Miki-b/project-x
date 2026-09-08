@@ -6,7 +6,8 @@ import { BrandMark } from "./BrandMark";
 export type PortalTab = { id: string; label: string; badge?: number };
 
 export type PortalBranding = {
-  logoVersion: string | null; // cache-bust hash of the logo pathname; null = no logo
+  logoVersion: string | null; // light-mode logo cache-bust hash; null = none
+  logoDarkVersion: string | null; // dark-mode logo cache-bust hash; null = none
   primaryLight: string | null;
   primaryDark: string | null;
   font: "default" | "space" | "manrope" | "sora";
@@ -27,20 +28,34 @@ function brandingCss(b?: PortalBranding): string {
 function BrandArea({
   brand,
   logoVersion,
+  logoDarkVersion,
   textClass,
 }: {
   brand: string;
   logoVersion: string | null;
+  logoDarkVersion: string | null;
   textClass: string;
 }) {
-  if (logoVersion) {
-    return (
+  if (logoVersion || logoDarkVersion) {
+    const cls = "h-8 w-auto max-w-[150px] object-contain";
+    // If a variant is missing, fall back to the other for both themes.
+    const lightSrc = logoVersion
+      ? `/api/org/logo?v=${logoVersion}`
+      : `/api/org/logo?variant=dark&v=${logoDarkVersion}`;
+    const darkSrc = logoDarkVersion
+      ? `/api/org/logo?variant=dark&v=${logoDarkVersion}`
+      : `/api/org/logo?v=${logoVersion}`;
+    if (lightSrc === darkSrc) {
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={`/api/org/logo?v=${logoVersion}`}
-        alt={brand}
-        className="h-8 w-auto max-w-[150px] object-contain"
-      />
+      return <img src={lightSrc} alt={brand} className={cls} />;
+    }
+    return (
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={lightSrc} alt={brand} className={`${cls} dark:hidden`} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={darkSrc} alt={brand} className={`hidden ${cls} dark:block`} />
+      </>
     );
   }
   return (
@@ -84,6 +99,7 @@ export function PortalShell({
           <BrandArea
             brand={brand}
             logoVersion={branding?.logoVersion ?? null}
+            logoDarkVersion={branding?.logoDarkVersion ?? null}
             textClass="font-display text-lg font-semibold tracking-tight"
           />
         </div>
@@ -105,6 +121,7 @@ export function PortalShell({
           <BrandArea
             brand={brand}
             logoVersion={branding?.logoVersion ?? null}
+            logoDarkVersion={branding?.logoDarkVersion ?? null}
             textClass="font-display text-base font-semibold tracking-tight"
           />
           {headerRight ? <div className="flex items-center gap-2">{headerRight}</div> : null}

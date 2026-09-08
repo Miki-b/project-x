@@ -30,9 +30,12 @@ function normHex(v: string): string | null {
   return HEX_RE.test(t) ? t.toLowerCase() : null;
 }
 
+export type LogoVariant = "light" | "dark";
+
 export type Branding = {
   name: string;
   logoPathname: string | null;
+  logoDarkPathname: string | null;
   primaryLight: string | null;
   primaryDark: string | null;
   font: FontPreset;
@@ -45,6 +48,7 @@ export async function getBranding(orgId: string): Promise<Branding | null> {
   return {
     name: org.name,
     logoPathname: org.logoPathname,
+    logoDarkPathname: org.logoDarkPathname,
     primaryLight: org.brandPrimaryLight,
     primaryDark: org.brandPrimaryDark,
     font: normFont(org.brandFont),
@@ -64,35 +68,46 @@ export async function updateBranding(
   await basePrisma.organization.update({ where: { id: ctx.orgId }, data });
 }
 
-/** Set the org logo after a blob upload (manager-only); deletes the previous object. */
-export async function setLogo(ctx: Ctx, logo: { url: string; pathname: string }): Promise<void> {
+/** Set the org logo for a theme variant (manager-only); deletes the previous object. */
+export async function setLogo(
+  ctx: Ctx,
+  logo: { url: string; pathname: string; variant: LogoVariant },
+): Promise<void> {
   if (!isManager(ctx)) throw new NotAuthorised();
   if (!BLOB_URL_RE.test(logo.url)) throw new NotAuthorised("Invalid logo URL");
   const org = await basePrisma.organization.findUnique({ where: { id: ctx.orgId } });
+  const prevUrl = logo.variant === "dark" ? org?.logoDarkUrl : org?.logoUrl;
   await basePrisma.organization.update({
     where: { id: ctx.orgId },
-    data: { logoUrl: logo.url, logoPathname: logo.pathname },
+    data:
+      logo.variant === "dark"
+        ? { logoDarkUrl: logo.url, logoDarkPathname: logo.pathname }
+        : { logoUrl: logo.url, logoPathname: logo.pathname },
   });
-  if (org?.logoUrl && org.logoUrl !== logo.url) {
+  if (prevUrl && prevUrl !== logo.url) {
     try {
-      await del(org.logoUrl);
+      await del(prevUrl);
     } catch {
       /* ignore */
     }
   }
 }
 
-/** Remove the org logo (manager-only). */
-export async function removeLogo(ctx: Ctx): Promise<void> {
+/** Remove the org logo for a theme variant (manager-only). */
+export async function removeLogo(ctx: Ctx, variant: LogoVariant): Promise<void> {
   if (!isManager(ctx)) throw new NotAuthorised();
   const org = await basePrisma.organization.findUnique({ where: { id: ctx.orgId } });
+  const prevUrl = variant === "dark" ? org?.logoDarkUrl : org?.logoUrl;
   await basePrisma.organization.update({
     where: { id: ctx.orgId },
-    data: { logoUrl: null, logoPathname: null },
+    data:
+      variant === "dark"
+        ? { logoDarkUrl: null, logoDarkPathname: null }
+        : { logoUrl: null, logoPathname: null },
   });
-  if (org?.logoUrl) {
+  if (prevUrl) {
     try {
-      await del(org.logoUrl);
+      await del(prevUrl);
     } catch {
       /* ignore */
     }
