@@ -30,8 +30,9 @@ export const ALLOWED_CONTENT_TYPES = [
   "text/csv",
 ];
 
-// Accept only our Vercel Blob host (private stores omit the `.public.` segment).
-const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.(public\.)?blob\.vercel-storage\.com\//;
+// Accept only a Vercel Blob host. Private stores serve from `<id>.private.blob.…`, public from
+// `<id>.public.blob.…`; the subdomain segment ([a-z0-9.-]+) covers both.
+const BLOB_URL_RE = /^https:\/\/[a-z0-9.-]+\.blob\.vercel-storage\.com\//;
 
 export type UploadTarget = { kind: "project" | "task"; id: string };
 

@@ -4,7 +4,8 @@ import type { Ctx, Locale } from "@/types";
 import { NotAuthorised } from "@/types";
 import { orgDb } from "@/server/db/client";
 
-const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.(public\.)?blob\.vercel-storage\.com\//;
+// Accept any Vercel Blob host (private stores serve from `<id>.private.blob.…`).
+const BLOB_URL_RE = /^https:\/\/[a-z0-9.-]+\.blob\.vercel-storage\.com\//;
 
 /**
  * User service (docs/architecture.md §7). Users are disabled, never deleted (§5 rule 7).
