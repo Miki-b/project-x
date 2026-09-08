@@ -10,6 +10,7 @@ import { shortHash } from "@/lib/hash";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Avatar } from "@/components/Avatar";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { StatusBadge, ProjectBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
@@ -67,13 +68,16 @@ export default async function EmployeeHome() {
   );
 
   return (
-    <PortalShell
-      brand={t(ctx.locale, "miniapp.title")}
-      tabs={tabs}
-      sections={sections}
-      headerRight={headerRight}
-      branding={portalBranding}
-    />
+    <>
+      <PortalShell
+        brand={t(ctx.locale, "miniapp.title")}
+        tabs={tabs}
+        sections={sections}
+        headerRight={headerRight}
+        branding={portalBranding}
+      />
+      <OnboardingGuide role="employee" locale={ctx.locale} />
+    </>
   );
 }
 

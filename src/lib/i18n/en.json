@@ -98,6 +98,26 @@
     "error": "Couldn't save. Please try again.",
     "hint": "Applies to both the manager and employee apps."
   },
+  "onboarding": {
+    "title": "Quick start",
+    "next": "Next",
+    "done": "Got it",
+    "skip": "Skip",
+    "manager": {
+      "s1": "👋 Welcome! Let me show you around in 30 seconds.",
+      "s2": "📋 In Tasks, create and assign work — your team gets it instantly on Telegram.",
+      "s3": "🗂 Use Projects to group related tasks and choose who's involved.",
+      "s4": "👥 Invite your team from the Invite tab: share one link, they tap Start.",
+      "s5": "🎨 Make it yours in Settings — logo, colors, and font. Enjoy!"
+    },
+    "employee": {
+      "s1": "👋 Welcome! Here's how this works.",
+      "s2": "✅ Your tasks appear here. Tap one to see the details.",
+      "s3": "▶️ Tap Start when you begin, Done when you finish, or I'm stuck if blocked.",
+      "s4": "📎 Add a photo or file as proof right on the task.",
+      "s5": "🙂 Set your photo and language from the top-right. You're all set!"
+    }
+  },
   "team": {
     "status": {
       "INVITED": "Invited",

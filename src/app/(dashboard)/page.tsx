@@ -10,6 +10,7 @@ import { shortHash } from "@/lib/hash";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Avatar } from "@/components/Avatar";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { LoginForm } from "./LoginForm";
 import { CopyLink } from "./CopyLink";
@@ -214,12 +215,15 @@ export default async function DashboardPage() {
   );
 
   return (
-    <PortalShell
-      brand={t(ctx.locale, "dashboard.title")}
-      tabs={tabs}
-      sections={sections}
-      headerRight={headerRight}
-      branding={portalBranding}
-    />
+    <>
+      <PortalShell
+        brand={t(ctx.locale, "dashboard.title")}
+        tabs={tabs}
+        sections={sections}
+        headerRight={headerRight}
+        branding={portalBranding}
+      />
+      <OnboardingGuide role="manager" locale={ctx.locale} />
+    </>
   );
 }
