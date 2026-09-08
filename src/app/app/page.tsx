@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import type { Locale } from "@/types";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee, type TaskWithProject } from "@/server/services/tasks";
+import { getMe } from "@/server/services/users";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { Avatar } from "@/components/Avatar";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { StatusBadge, ProjectBadge, dueLabel } from "@/app/miniapp/ui";
 import { employeeSignOutAction } from "./actions";
@@ -17,7 +19,7 @@ export default async function EmployeeHome() {
   const ctx = await getMiniAppCtx();
   if (!ctx) redirect("/app/login");
 
-  const tasks = await listTasksForAssignee(ctx, ctx.actorId);
+  const [tasks, me] = await Promise.all([listTasksForAssignee(ctx, ctx.actorId), getMe(ctx)]);
   const active = tasks.filter((task) => task.status !== "DONE" && task.status !== "CANCELLED");
   const done = tasks.filter((task) => task.status === "DONE" || task.status === "CANCELLED");
 
@@ -33,9 +35,14 @@ export default async function EmployeeHome() {
 
   const headerRight = (
     <>
+      {me ? (
+        <Link href="/app/profile" aria-label={t(ctx.locale, "profile.heading")} className="mr-1">
+          <Avatar user={me} size={32} />
+        </Link>
+      ) : null}
       <LanguageSelector current={ctx.locale} />
       <ThemeToggle />
-      <form action={employeeSignOutAction} className="md:ml-auto">
+      <form action={employeeSignOutAction}>
         <button type="submit" className="btn btn-ghost h-9 px-3">
           {t(ctx.locale, "employee.sign_out")}
         </button>

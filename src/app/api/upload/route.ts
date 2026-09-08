@@ -20,7 +20,13 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PayloadSchema = z.object({ kind: z.enum(["project", "task"]), id: z.string().min(1) });
+const PayloadSchema = z.object({
+  kind: z.enum(["project", "task", "avatar"]),
+  id: z.string().min(1),
+});
+
+const IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(req: Request): Promise<Response> {
   const body = (await req.json()) as HandleUploadBody;
@@ -32,7 +38,19 @@ export async function POST(req: Request): Promise<Response> {
         const ctx = await getCurrentCtx();
         if (!ctx) throw new NotAuthorised();
         const target = PayloadSchema.parse(JSON.parse(clientPayload ?? "{}"));
-        await assertCanUpload(ctx, target);
+
+        // Avatar: the actor may only upload their OWN, and only images.
+        if (target.kind === "avatar") {
+          if (target.id !== ctx.actorId) throw new NotAuthorised();
+          return {
+            allowedContentTypes: IMAGE_CONTENT_TYPES,
+            maximumSizeInBytes: MAX_AVATAR_BYTES,
+            addRandomSuffix: true,
+            tokenPayload: JSON.stringify({ kind: "avatar", id: ctx.actorId }),
+          };
+        }
+
+        await assertCanUpload(ctx, { kind: target.kind, id: target.id });
         return {
           allowedContentTypes: ALLOWED_CONTENT_TYPES,
           maximumSizeInBytes: MAX_ATTACHMENT_BYTES,

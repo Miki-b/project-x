@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getCurrentCtx } from "@/server/auth/session";
 import { createOrgInvite } from "@/server/services/invites";
-import { listMembers } from "@/server/services/users";
+import { listMembers, getMe } from "@/server/services/users";
 import { listOrgTasks } from "@/server/services/tasks";
 import { listProjects } from "@/server/services/projects";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { Avatar } from "@/components/Avatar";
 import { PortalShell, type PortalTab } from "@/components/PortalShell";
 import { LoginForm } from "./LoginForm";
 import { CopyLink } from "./CopyLink";
@@ -19,11 +20,12 @@ export default async function DashboardPage() {
   const ctx = await getCurrentCtx();
   if (!ctx) return <LoginForm />;
 
-  const [invite, members, tasks, projects] = await Promise.all([
+  const [invite, members, tasks, projects, me] = await Promise.all([
     createOrgInvite(ctx),
     listMembers(ctx),
     listOrgTasks(ctx),
     listProjects(ctx),
+    getMe(ctx),
   ]);
   const username = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const inviteUrl = username ? `https://t.me/${username}?start=${invite.token}` : null;
@@ -117,10 +119,15 @@ export default async function DashboardPage() {
               {members.map((m) => (
                 <li
                   key={m.id}
-                  className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-surface-2"
+                  className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-surface-2"
                 >
-                  <span className="font-medium">{m.name.trim() === "" ? "—" : m.name}</span>
-                  <span className="flex items-center gap-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Avatar user={m} size={32} />
+                    <span className="truncate font-medium">
+                      {m.name.trim() === "" ? "—" : m.name}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-sm">
                     <span className="badge">{t(ctx.locale, `role.${m.role}`)}</span>
                     <span className="text-muted">{t(ctx.locale, `team.status.${m.status}`)}</span>
                   </span>
@@ -154,9 +161,14 @@ export default async function DashboardPage() {
 
   const headerRight = (
     <>
+      {me ? (
+        <Link href="/profile" aria-label={t(ctx.locale, "profile.heading")} className="mr-1">
+          <Avatar user={me} size={32} />
+        </Link>
+      ) : null}
       <LanguageSelector current={ctx.locale} />
       <ThemeToggle />
-      <form action={logoutAction} className="md:ml-auto">
+      <form action={logoutAction}>
         <button type="submit" className="btn btn-ghost h-9 px-3">
           {t(ctx.locale, "dashboard.logout")}
         </button>

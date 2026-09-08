@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { formatInAddis } from "@/lib/time";
 import { truncateTitle } from "@/server/telegram/messages/task";
 import { ProjectBadge } from "@/app/miniapp/ui";
+import { Avatar } from "@/components/Avatar";
 
 const STATUS_ORDER: TaskStatus[] = ["PENDING", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"];
 
@@ -67,7 +68,10 @@ export function TaskBoard({ tasks, locale }: { tasks: TaskWithAssignee[]; locale
                           {truncateTitle(task.title)}
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
-                          <span className="truncate">{task.assignee.name}</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Avatar user={task.assignee} size={18} ring={false} />
+                            <span className="truncate">{task.assignee.name}</span>
+                          </span>
                           {task.dueAt ? (
                             <>
                               <span aria-hidden>·</span>

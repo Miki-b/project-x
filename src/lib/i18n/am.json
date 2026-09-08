@@ -64,6 +64,20 @@
     "failed": "መጫን አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
     "hint": "ምስሎች ወይም ሰነዶች፣ እስከ 10 ሜባ።"
   },
+  "profile": {
+    "heading": "መገለጫ",
+    "name": "ስም",
+    "phone": "ስልክ (አማራጭ)",
+    "role": "ሚና",
+    "save": "አስቀምጥ",
+    "saved": "ተቀምጧል።",
+    "error_name": "ስምዎ ያስፈልጋል።",
+    "photo": "ፎቶ",
+    "change_photo": "ፎቶ ቀይር",
+    "remove_photo": "አስወግድ",
+    "photo_hint": "JPG፣ PNG፣ GIF ወይም WebP፣ እስከ 5 ሜባ።",
+    "photo_too_large": "ምስሉ በጣም ትልቅ ነው (ከፍተኛ 5 ሜባ)።"
+  },
   "team": {
     "status": {
       "INVITED": "ተጋብዟል",

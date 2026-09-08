@@ -64,6 +64,20 @@
     "failed": "Upload failed. Please try again.",
     "hint": "Images or documents, up to 10 MB."
   },
+  "profile": {
+    "heading": "Profile",
+    "name": "Name",
+    "phone": "Phone (optional)",
+    "role": "Role",
+    "save": "Save",
+    "saved": "Saved.",
+    "error_name": "Your name is required.",
+    "photo": "Photo",
+    "change_photo": "Change photo",
+    "remove_photo": "Remove",
+    "photo_hint": "JPG, PNG, GIF or WebP, up to 5 MB.",
+    "photo_too_large": "That image is too large (max 5 MB)."
+  },
   "team": {
     "status": {
       "INVITED": "Invited",
