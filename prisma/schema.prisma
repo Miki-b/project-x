@@ -89,6 +89,12 @@ model Organization {
   timezone  String   @default("Africa/Addis_Ababa")
   locale    String   @default("en")
   plan      String   @default("free")
+  // Branding (§4.14): manager-configurable logo + theme, applied to both portals.
+  logoUrl           String? // private Blob URL of the org logo
+  logoPathname      String? // blob pathname, for serving/deleting
+  brandPrimaryLight String? // primary colour hex in light mode (e.g. #1b2a5c)
+  brandPrimaryDark  String? // primary colour hex in dark mode
+  brandFont         String? // font preset key: default | space | manrope | sora
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

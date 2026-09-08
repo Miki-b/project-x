@@ -4,7 +4,9 @@ import type { Locale } from "@/types";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { listTasksForAssignee, type TaskWithProject } from "@/server/services/tasks";
 import { getMe } from "@/server/services/users";
+import { getBranding } from "@/server/services/branding";
 import { t } from "@/lib/i18n";
+import { shortHash } from "@/lib/hash";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Avatar } from "@/components/Avatar";
@@ -19,9 +21,22 @@ export default async function EmployeeHome() {
   const ctx = await getMiniAppCtx();
   if (!ctx) redirect("/app/login");
 
-  const [tasks, me] = await Promise.all([listTasksForAssignee(ctx, ctx.actorId), getMe(ctx)]);
+  const [tasks, me, branding] = await Promise.all([
+    listTasksForAssignee(ctx, ctx.actorId),
+    getMe(ctx),
+    getBranding(ctx.orgId),
+  ]);
   const active = tasks.filter((task) => task.status !== "DONE" && task.status !== "CANCELLED");
   const done = tasks.filter((task) => task.status === "DONE" || task.status === "CANCELLED");
+
+  const portalBranding = branding
+    ? {
+        logoVersion: branding.logoPathname ? shortHash(branding.logoPathname) : null,
+        primaryLight: branding.primaryLight,
+        primaryDark: branding.primaryDark,
+        font: branding.font,
+      }
+    : undefined;
 
   const tabs: PortalTab[] = [
     { id: "active", label: t(ctx.locale, "employee.active"), badge: active.length },
@@ -56,6 +71,7 @@ export default async function EmployeeHome() {
       tabs={tabs}
       sections={sections}
       headerRight={headerRight}
+      branding={portalBranding}
     />
   );
 }

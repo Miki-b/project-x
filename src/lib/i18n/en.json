@@ -78,6 +78,24 @@
     "photo_hint": "JPG, PNG, GIF or WebP, up to 5 MB.",
     "photo_too_large": "That image is too large (max 5 MB)."
   },
+  "settings": {
+    "heading": "Settings",
+    "branding": "Branding",
+    "logo": "Logo",
+    "no_logo": "No logo yet",
+    "upload_logo": "Upload logo",
+    "primary_light": "Primary color · Light",
+    "primary_dark": "Primary color · Dark",
+    "font": "Font",
+    "font_default": "Default (Bricolage + Instrument)",
+    "font_space": "Space Grotesk",
+    "font_manrope": "Manrope",
+    "font_sora": "Sora",
+    "save": "Save",
+    "saved": "Saved.",
+    "error": "Couldn't save. Please try again.",
+    "hint": "Applies to both the manager and employee apps."
+  },
   "team": {
     "status": {
       "INVITED": "Invited",

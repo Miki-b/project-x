@@ -78,6 +78,24 @@
     "photo_hint": "JPG፣ PNG፣ GIF ወይም WebP፣ እስከ 5 ሜባ።",
     "photo_too_large": "ምስሉ በጣም ትልቅ ነው (ከፍተኛ 5 ሜባ)።"
   },
+  "settings": {
+    "heading": "ቅንብሮች",
+    "branding": "ብራንዲንግ",
+    "logo": "አርማ",
+    "no_logo": "እስካሁን አርማ የለም",
+    "upload_logo": "አርማ ስቀል",
+    "primary_light": "ዋና ቀለም · ብርሃን",
+    "primary_dark": "ዋና ቀለም · ጨለማ",
+    "font": "ፊደል",
+    "font_default": "ነባሪ (Bricolage + Instrument)",
+    "font_space": "Space Grotesk",
+    "font_manrope": "Manrope",
+    "font_sora": "Sora",
+    "save": "አስቀምጥ",
+    "saved": "ተቀምጧል።",
+    "error": "ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
+    "hint": "በሥራ አስኪያጅና በሠራተኛ መተግበሪያዎች ላይ ይተገበራል።"
+  },
   "team": {
     "status": {
       "INVITED": "ተጋብዟል",

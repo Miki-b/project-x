@@ -21,11 +21,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PayloadSchema = z.object({
-  kind: z.enum(["project", "task", "avatar"]),
+  kind: z.enum(["project", "task", "avatar", "logo"]),
   id: z.string().min(1),
 });
 
-const IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(req: Request): Promise<Response> {
@@ -47,6 +47,18 @@ export async function POST(req: Request): Promise<Response> {
             maximumSizeInBytes: MAX_AVATAR_BYTES,
             addRandomSuffix: true,
             tokenPayload: JSON.stringify({ kind: "avatar", id: ctx.actorId }),
+          };
+        }
+
+        // Logo: managers only, for their own org, images only.
+        if (target.kind === "logo") {
+          const isManager = ctx.role === "OWNER" || ctx.role === "MANAGER";
+          if (!isManager || target.id !== ctx.orgId) throw new NotAuthorised();
+          return {
+            allowedContentTypes: IMAGE_CONTENT_TYPES,
+            maximumSizeInBytes: MAX_AVATAR_BYTES,
+            addRandomSuffix: true,
+            tokenPayload: JSON.stringify({ kind: "logo", id: ctx.orgId }),
           };
         }
 

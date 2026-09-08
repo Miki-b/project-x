@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, Space_Grotesk, Manrope, Sora } from "next/font/google";
 import "./globals.css";
 
-// Display (headings) + body. Chosen to feel crafted rather than default-issue.
+// Default pairing: display (headings) + body. Chosen to feel crafted rather than default-issue.
 const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
@@ -13,6 +13,11 @@ const sans = Instrument_Sans({
   subsets: ["latin"],
   display: "swap",
 });
+
+// Extra font presets an org can switch to in Settings (applied via a CSS-var override).
+const space = Space_Grotesk({ variable: "--font-space", subsets: ["latin"], display: "swap" });
+const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], display: "swap" });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Task Manager",
@@ -27,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${display.variable} ${sans.variable} h-full antialiased`}
+      className={`${display.variable} ${sans.variable} ${space.variable} ${manrope.variable} ${sora.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

@@ -5,6 +5,54 @@ import { BrandMark } from "./BrandMark";
 
 export type PortalTab = { id: string; label: string; badge?: number };
 
+export type PortalBranding = {
+  logoVersion: string | null; // cache-bust hash of the logo pathname; null = no logo
+  primaryLight: string | null;
+  primaryDark: string | null;
+  font: "default" | "space" | "manrope" | "sora";
+};
+
+/** Build the CSS-variable overrides for an org's theme (colours + font). Values are pre-validated. */
+function brandingCss(b?: PortalBranding): string {
+  if (!b) return "";
+  const parts: string[] = [];
+  if (b.primaryLight) parts.push(`:root{--primary:${b.primaryLight};--primary-2:${b.primaryLight}}`);
+  if (b.primaryDark) parts.push(`.dark{--primary:${b.primaryDark};--primary-2:${b.primaryDark}}`);
+  if (b.font !== "default") {
+    parts.push(`:root{--font-display:var(--font-${b.font});--font-sans:var(--font-${b.font})}`);
+  }
+  return parts.join("");
+}
+
+function BrandArea({
+  brand,
+  logoVersion,
+  textClass,
+}: {
+  brand: string;
+  logoVersion: string | null;
+  textClass: string;
+}) {
+  if (logoVersion) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/api/org/logo?v=${logoVersion}`}
+        alt={brand}
+        className="h-8 w-auto max-w-[150px] object-contain"
+      />
+    );
+  }
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
+        <BrandMark size={18} />
+      </span>
+      <span className={textClass}>{brand}</span>
+    </div>
+  );
+}
+
 /**
  * App-portal shell. Desktop/tablet (md+): a full-height sidebar pinned to the left edge with
  * section nav, content filling the rest of the viewport. Phones (<md): a glass top bar + a
@@ -16,23 +64,28 @@ export function PortalShell({
   tabs,
   sections,
   headerRight,
+  branding,
 }: {
   brand: string;
   tabs: PortalTab[];
   sections: Record<string, ReactNode>;
   headerRight?: ReactNode;
+  branding?: PortalBranding;
 }) {
   const [active, setActive] = useState(tabs[0]?.id);
+  const css = brandingCss(branding);
 
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">
+      {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
       {/* Sidebar (tablet + desktop) — pinned to the left edge, fills viewport height */}
       <aside className="glass sticky top-0 z-20 hidden h-screen w-60 shrink-0 flex-col border-r border-border p-4 md:flex lg:w-64">
-        <div className="mb-6 flex items-center gap-2.5 px-1">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-            <BrandMark size={18} />
-          </span>
-          <span className="font-display text-lg font-semibold tracking-tight">{brand}</span>
+        <div className="mb-6 flex items-center px-1">
+          <BrandArea
+            brand={brand}
+            logoVersion={branding?.logoVersion ?? null}
+            textClass="font-display text-lg font-semibold tracking-tight"
+          />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {tabs.map((tab) => (
@@ -49,12 +102,11 @@ export function PortalShell({
       {/* Phone top bar */}
       <header className="glass sticky top-0 z-20 border-b border-border md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-              <BrandMark size={18} />
-            </span>
-            <span className="font-display text-base font-semibold tracking-tight">{brand}</span>
-          </div>
+          <BrandArea
+            brand={brand}
+            logoVersion={branding?.logoVersion ?? null}
+            textClass="font-display text-base font-semibold tracking-tight"
+          />
           {headerRight ? <div className="flex items-center gap-2">{headerRight}</div> : null}
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-2.5">

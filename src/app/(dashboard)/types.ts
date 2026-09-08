@@ -3,3 +3,4 @@
 export type LoginState = { error: string };
 export type TaskFormState = { error?: string };
 export type ProjectFormState = { error?: string };
+export type SettingsState = { error?: string; ok?: boolean };

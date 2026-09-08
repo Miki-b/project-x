@@ -1,3 +1,5 @@
+import { shortHash } from "@/lib/hash";
+
 // A circular avatar: the user's photo (served through the authenticated /api/avatar proxy) or,
 // when there's none, their initials on a deterministic colour. Plain <img> on purpose — the
 // proxy is auth-gated by cookie, which next/image's server-side optimiser wouldn't send.
@@ -26,10 +28,13 @@ export function Avatar({
 }) {
   const ringClass = ring ? "ring-1 ring-border" : "";
   if (user.avatarPathname) {
+    // Cache-bust with a hash of the pathname (which changes on every upload) so a new photo
+    // shows immediately after refresh instead of serving the browser-cached old image.
+    const v = shortHash(user.avatarPathname);
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={`/api/avatar/${user.id}`}
+        src={`/api/avatar/${user.id}?v=${v}`}
         alt=""
         width={size}
         height={size}

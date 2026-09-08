@@ -4,7 +4,9 @@ import { createOrgInvite } from "@/server/services/invites";
 import { listMembers, getMe } from "@/server/services/users";
 import { listOrgTasks } from "@/server/services/tasks";
 import { listProjects } from "@/server/services/projects";
+import { getBranding } from "@/server/services/branding";
 import { t } from "@/lib/i18n";
+import { shortHash } from "@/lib/hash";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Avatar } from "@/components/Avatar";
@@ -13,6 +15,7 @@ import { LoginForm } from "./LoginForm";
 import { CopyLink } from "./CopyLink";
 import { CreateTaskForm } from "./CreateTaskForm";
 import { CreateProjectForm } from "./CreateProjectForm";
+import { BrandingSettings } from "./BrandingSettings";
 import { TaskBoard } from "./TaskBoard";
 import { logoutAction } from "./actions";
 
@@ -20,23 +23,35 @@ export default async function DashboardPage() {
   const ctx = await getCurrentCtx();
   if (!ctx) return <LoginForm />;
 
-  const [invite, members, tasks, projects, me] = await Promise.all([
+  const [invite, members, tasks, projects, me, branding] = await Promise.all([
     createOrgInvite(ctx),
     listMembers(ctx),
     listOrgTasks(ctx),
     listProjects(ctx),
     getMe(ctx),
+    getBranding(ctx.orgId),
   ]);
   const username = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const inviteUrl = username ? `https://t.me/${username}?start=${invite.token}` : null;
   const activeMembers = members.filter((m) => m.status === "ACTIVE").length;
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
 
+  const logoVersion = branding?.logoPathname ? shortHash(branding.logoPathname) : null;
+  const portalBranding = branding
+    ? {
+        logoVersion,
+        primaryLight: branding.primaryLight,
+        primaryDark: branding.primaryDark,
+        font: branding.font,
+      }
+    : undefined;
+
   const tabs: PortalTab[] = [
     { id: "tasks", label: t(ctx.locale, "dashboard.tasks_heading"), badge: tasks.length },
     { id: "projects", label: t(ctx.locale, "projects.heading"), badge: projects.length },
     { id: "team", label: t(ctx.locale, "dashboard.team_heading"), badge: activeMembers },
     { id: "invite", label: t(ctx.locale, "dashboard.invite_heading") },
+    { id: "settings", label: t(ctx.locale, "settings.heading") },
   ];
 
   const sections = {
@@ -157,6 +172,26 @@ export default async function DashboardPage() {
         </div>
       </section>
     ),
+    settings: (
+      <section>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">
+          {t(ctx.locale, "settings.branding")}
+        </h2>
+        <div className="card mt-5 p-6">
+          <BrandingSettings
+            orgId={ctx.orgId}
+            locale={ctx.locale}
+            branding={{
+              hasLogo: logoVersion !== null,
+              logoVersion,
+              primaryLight: branding?.primaryLight ?? null,
+              primaryDark: branding?.primaryDark ?? null,
+              font: branding?.font ?? "default",
+            }}
+          />
+        </div>
+      </section>
+    ),
   };
 
   const headerRight = (
@@ -182,6 +217,7 @@ export default async function DashboardPage() {
       tabs={tabs}
       sections={sections}
       headerRight={headerRight}
+      branding={portalBranding}
     />
   );
 }
