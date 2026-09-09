@@ -199,6 +199,9 @@ export default async function DashboardPage() {
 
   const headerRight = (
     <>
+      {/* Soso product mark — always visible top-right (an org logo may occupy the top-left). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/Soso_logo.png" alt="Soso" className="mr-1 hidden h-6 w-auto md:block" />
       {me ? (
         <Link href="/profile" aria-label={t(ctx.locale, "profile.heading")} className="mr-1">
           <Avatar user={me} size={32} />
