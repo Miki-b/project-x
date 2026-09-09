@@ -20,8 +20,8 @@ const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], displa
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Task Manager",
-  description: "A simple task and daily-work manager for Ethiopian companies.",
+  title: "Soso",
+  description: "Soso — a simple task and daily-work manager. By ApexHub Labs.",
 };
 
 // Set the theme class before first paint so there is no light/dark flash.

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getMiniAppCtx } from "@/server/auth/session";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BrandMark } from "@/components/BrandMark";
+import { MadeByApexHub } from "@/components/MadeByApexHub";
 
 // Public sign-in page for the employee web app. If already signed in, go straight to the tasks.
 export const dynamic = "force-dynamic";
@@ -21,15 +21,14 @@ export default async function EmployeeLoginPage({
   const startLink = `https://t.me/${botUsername}?start=weblogin`;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center p-6">
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-5 p-6">
       <div className="absolute right-5 top-5">
         <ThemeToggle />
       </div>
 
       <div className="card animate-rise w-full max-w-sm p-7 text-center">
-        <div className="mx-auto mb-4 inline-grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-          <BrandMark size={22} />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/Soso_logo.png" alt="Soso" className="mx-auto mb-5 h-9 w-auto" />
         <h1 className="text-2xl font-semibold tracking-tight">
           {t("en", "employee.login_heading")}
         </h1>
@@ -54,6 +53,8 @@ export default async function EmployeeLoginPage({
 
         <p className="mt-4 text-xs text-muted">{t("en", "employee.login_steps")}</p>
       </div>
+
+      <MadeByApexHub />
     </main>
   );
 }

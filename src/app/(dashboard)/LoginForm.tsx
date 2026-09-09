@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BrandMark } from "@/components/BrandMark";
+import { MadeByApexHub } from "@/components/MadeByApexHub";
 import { loginAction } from "./actions";
 import type { LoginState } from "./types";
 
@@ -13,16 +13,15 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, INITIAL);
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center p-6">
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-5 p-6">
       <div className="absolute right-5 top-5">
         <ThemeToggle />
       </div>
 
       <div className="card animate-rise w-full max-w-sm p-7">
         <div className="mb-6">
-          <div className="mb-4 inline-grid h-11 w-11 place-items-center rounded-xl bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-            <BrandMark />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Soso_logo.png" alt="Soso" className="mb-5 h-9 w-auto" />
           <h1 className="text-2xl font-semibold tracking-tight">{t("en", "auth.heading")}</h1>
         </div>
 
@@ -47,6 +46,8 @@ export function LoginForm() {
           </button>
         </form>
       </div>
+
+      <MadeByApexHub />
     </main>
   );
 }

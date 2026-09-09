@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BrandMark } from "./BrandMark";
+import { MadeByApexHub } from "./MadeByApexHub";
 
 export type PortalTab = { id: string; label: string; badge?: number };
 
@@ -29,16 +29,15 @@ function BrandArea({
   brand,
   logoVersion,
   logoDarkVersion,
-  textClass,
 }: {
   brand: string;
   logoVersion: string | null;
   logoDarkVersion: string | null;
-  textClass: string;
 }) {
+  const cls = "h-8 w-auto max-w-[150px] object-contain";
+
+  // Org logo (white-label) takes precedence; falls back across themes if only one variant is set.
   if (logoVersion || logoDarkVersion) {
-    const cls = "h-8 w-auto max-w-[150px] object-contain";
-    // If a variant is missing, fall back to the other for both themes.
     const lightSrc = logoVersion
       ? `/api/org/logo?v=${logoVersion}`
       : `/api/org/logo?variant=dark&v=${logoDarkVersion}`;
@@ -58,14 +57,10 @@ function BrandArea({
       </>
     );
   }
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg shadow-[var(--shadow-primary)]">
-        <BrandMark size={18} />
-      </span>
-      <span className={textClass}>{brand}</span>
-    </div>
-  );
+
+  // Default product brand: Soso.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/Soso_logo.png" alt={brand} className={cls} />;
 }
 
 /**
@@ -100,7 +95,6 @@ export function PortalShell({
             brand={brand}
             logoVersion={branding?.logoVersion ?? null}
             logoDarkVersion={branding?.logoDarkVersion ?? null}
-            textClass="font-display text-lg font-semibold tracking-tight"
           />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
@@ -113,6 +107,9 @@ export function PortalShell({
             />
           ))}
         </nav>
+        <div className="mt-4 border-t border-border pt-4">
+          <MadeByApexHub />
+        </div>
       </aside>
 
       {/* Phone top bar */}
@@ -122,7 +119,6 @@ export function PortalShell({
             brand={brand}
             logoVersion={branding?.logoVersion ?? null}
             logoDarkVersion={branding?.logoDarkVersion ?? null}
-            textClass="font-display text-base font-semibold tracking-tight"
           />
           {headerRight ? <div className="flex items-center gap-2">{headerRight}</div> : null}
         </div>
