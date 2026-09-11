@@ -186,7 +186,7 @@ export async function attachProof(
   });
 }
 
-/** The assignee's tasks, flat, sorted by due date (overdue first; no-due last). */
+/** The assignee's tasks, newest first — tasks added today show at the top (employee + Mini App). */
 export async function listTasksForAssignee(
   ctx: Ctx,
   assigneeId: string,
@@ -195,7 +195,7 @@ export async function listTasksForAssignee(
   return orgDb(ctx.orgId).task.findMany({
     where: { assigneeId },
     include: { project: true },
-    orderBy: [{ dueAt: "asc" }],
+    orderBy: [{ createdAt: "desc" }],
   });
 }
 

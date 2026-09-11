@@ -22,6 +22,7 @@ const sora = Sora({ variable: "--font-sora", subsets: ["latin"], display: "swap"
 export const metadata: Metadata = {
   title: "Soso",
   description: "Soso — a simple task and daily-work manager. By ApexHub Labs.",
+  icons: { icon: "/Soso_favicon.png", shortcut: "/Soso_favicon.png", apple: "/Soso_favicon.png" },
 };
 
 // Set the theme class before first paint so there is no light/dark flash.
