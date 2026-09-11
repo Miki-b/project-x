@@ -3,12 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { login } from "@/server/services/auth";
+import { login, signUpOrganization } from "@/server/services/auth";
 import { createTask } from "@/server/services/tasks";
 import { createProject, setProjectMembers, archiveProject } from "@/server/services/projects";
 import { sendTaskCardToAssignee } from "@/server/telegram/deliver";
 import { setSessionCookie, signOut, getCurrentCtx } from "@/server/auth/session";
-import { NotAuthorised } from "@/types";
+import { EmailTaken, NotAuthorised } from "@/types";
 import { logger } from "@/lib/logger";
 import { t } from "@/lib/i18n";
 import type { LoginState, TaskFormState, ProjectFormState } from "./types";
@@ -40,6 +40,35 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
 export async function logoutAction(): Promise<void> {
   await signOut();
+  redirect("/");
+}
+
+const SignupSchema = z.object({
+  orgName: z.string().min(1),
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
+export async function signupAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const parsed = SignupSchema.safeParse({
+    orgName: formData.get("orgName"),
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    const passwordIssue = parsed.error.issues.some((i) => i.path[0] === "password");
+    return { error: t("en", passwordIssue ? "auth.password_short" : "auth.invalid") };
+  }
+
+  try {
+    const { token, session } = await signUpOrganization(parsed.data);
+    await setSessionCookie(token, session.expiresAt);
+  } catch (error) {
+    if (error instanceof EmailTaken) return { error: t("en", "auth.email_taken") };
+    throw error;
+  }
   redirect("/");
 }
 

@@ -4,7 +4,17 @@
     "email": "ኢሜይል",
     "password": "የይለፍ ቃል",
     "sign_in": "ይግቡ",
-    "invalid": "ኢሜይል ወይም የይለፍ ቃል ትክክል አይደለም።"
+    "invalid": "ኢሜይል ወይም የይለፍ ቃል ትክክል አይደለም።",
+    "signup_heading": "ድርጅትዎን ይፍጠሩ",
+    "org_name": "የድርጅት ስም",
+    "your_name": "ስምዎ",
+    "password_hint": "ቢያንስ 8 ቁምፊዎች።",
+    "create_account": "ድርጅት ፍጠር",
+    "have_account": "አስቀድመው መለያ አለዎት?",
+    "no_account": "አዲስ ነዎት?",
+    "create_org_cta": "ድርጅት ይፍጠሩ",
+    "email_taken": "በዚህ ኢሜይል የተመዘገበ መለያ አስቀድሞ አለ።",
+    "password_short": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት።"
   },
   "dashboard": {
     "title": "ዳሽቦርድ",

@@ -4,7 +4,17 @@
     "email": "Email",
     "password": "Password",
     "sign_in": "Sign in",
-    "invalid": "Invalid email or password."
+    "invalid": "Invalid email or password.",
+    "signup_heading": "Create your organization",
+    "org_name": "Organization name",
+    "your_name": "Your name",
+    "password_hint": "At least 8 characters.",
+    "create_account": "Create organization",
+    "have_account": "Already have an account?",
+    "no_account": "New here?",
+    "create_org_cta": "Create an organization",
+    "email_taken": "An account with this email already exists.",
+    "password_short": "Password must be at least 8 characters."
   },
   "dashboard": {
     "title": "Dashboard",

@@ -4,11 +4,11 @@ import type { Session, User } from "@/generated/prisma/client";
 // invites.consumeInvite, this is trusted infrastructure and may use basePrisma directly
 // (docs/architecture.md §5 rule 2, §11). Every post-login query uses orgDb(session.orgId).
 import { basePrisma } from "@/server/db/client";
-import { verifyPassword } from "@/lib/password";
+import { verifyPassword, hashPassword } from "@/lib/password";
 import { generateSessionToken, hashSessionToken } from "@/lib/session-token";
 import { verifyInitData } from "@/server/auth/telegram-init-data";
 import { verifyLoginToken } from "@/lib/login-token";
-import { NotAuthorised } from "@/types";
+import { EmailTaken, NotAuthorised } from "@/types";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -51,6 +51,40 @@ export async function login(email: string, password: string): Promise<Authentica
   });
 
   return { token, session, user: updatedUser };
+}
+
+/**
+ * Self-service organisation signup (docs/architecture.md §11). Creates a new org and its OWNER
+ * (email + password) in one transaction, then starts a session. Pre-auth tenant creation, so it
+ * uses basePrisma. Email is globally unique — a duplicate throws EmailTaken.
+ */
+export async function signUpOrganization(input: {
+  orgName: string;
+  name: string;
+  email: string;
+  password: string;
+}): Promise<AuthenticatedSession> {
+  const email = input.email.trim().toLowerCase();
+  const existing = await basePrisma.user.findUnique({ where: { email } });
+  if (existing) throw new EmailTaken();
+
+  const passwordHash = await hashPassword(input.password);
+  const owner = await basePrisma.$transaction(async (tx) => {
+    const org = await tx.organization.create({ data: { name: input.orgName.trim().slice(0, 120) } });
+    return tx.user.create({
+      data: {
+        orgId: org.id,
+        name: input.name.trim().slice(0, 100),
+        role: "OWNER",
+        status: "ACTIVE",
+        email,
+        passwordHash,
+      },
+    });
+  });
+
+  const { token, session } = await createSession(owner.id, owner.orgId);
+  return { token, session, user: owner };
 }
 
 /**

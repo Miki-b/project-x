@@ -64,3 +64,9 @@ export class InitDataExpired extends DomainError {
     super("Telegram init data has expired");
   }
 }
+
+export class EmailTaken extends DomainError {
+  constructor() {
+    super("An account with this email already exists");
+  }
+}
