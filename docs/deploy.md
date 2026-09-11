@@ -18,12 +18,14 @@ nothing runs it today.
 
 ## Public URL
 
-**Use `https://project-x-blue-three.vercel.app`** everywhere (Mini App, webhook, BotFather).
+**Use `https://soso-tasks.vercel.app`** everywhere (Mini App, webhook, BotFather). It is a
+registered project (production) domain, so it is public and tracks the latest production deploy.
 
-> ⚠️ The Vercel-assigned `project-x-development-<team>.vercel.app` URL (what `vercel project ls`
-> calls the "Production URL") is behind **Vercel Deployment Protection** — it 302-redirects to a
-> Vercel SSO login, so Telegram cannot load it. Always use the `blue-three` alias, which is
-> public.
+> ⚠️ The raw team-scoped deployment URLs (`soso-<hash>-<team>.vercel.app`) are behind **Vercel
+> Deployment Protection** and 302-redirect to a Vercel SSO login — Telegram can't load them. Only
+> the registered production domain (`soso-tasks.vercel.app`) is public. To publish a new
+> `.vercel.app` alias, register it as a project domain (`vercel domains add <name> soso`) or it
+> will be protected.
 
 ## Delivery model (why there's no worker)
 
@@ -83,7 +85,7 @@ The bot runs in webhook mode. Register it after any change to the public URL or 
 ```bash
 # Register (also drops any queued long-poll updates)
 curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
-  -d "url=https://project-x-blue-three.vercel.app/api/telegram" \
+  -d "url=https://soso-tasks.vercel.app/api/telegram" \
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>" \
   -d "drop_pending_updates=true"
 
@@ -107,7 +109,7 @@ npm run bot:dev
 ## BotFather
 
 With a stable URL you can pin the Mini App: `/setmenubutton` → the bot → send
-`https://project-x-blue-three.vercel.app` → label it (e.g. "Tasks"). Employees then get a
+`https://soso-tasks.vercel.app` → label it (e.g. "Tasks"). Employees then get a
 persistent button that opens the Mini App.
 
 ### Employee web app (`/app`) — bot deep-link login
@@ -130,7 +132,7 @@ workflow ([.github/workflows/cron-tick.yml](../.github/workflows/cron-tick.yml))
 runs are free on this public repo. The same route also accepts native **Vercel Cron** (which
 sends the same Bearer header), so you can switch/add that any time.
 
-Test it: `curl -H "Authorization: Bearer $CRON_SECRET" https://project-x-blue-three.vercel.app/api/cron/tick`
+Test it: `curl -H "Authorization: Bearer $CRON_SECRET" https://soso-tasks.vercel.app/api/cron/tick`
 → `{"ok":true}`. Trigger the pinger manually with `gh workflow run cron-tick.yml`.
 
 Job status:
